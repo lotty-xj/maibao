@@ -1201,6 +1201,13 @@ function changeFeedingDate(date) {
   currentFeedingDate = date;
   document.getElementById('feeding-date-picker').value = date;
   renderFeedingSub(currentFeedingSub);
+  // Also update the header date text
+  const span = document.querySelector('#feeding-date-picker')?.previousElementSibling;
+  if(span){
+    const isToday = date === today();
+    const d=new Date(date);
+    span.textContent = isToday ? '今天' : `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+  }
 }
 
 function renderFeedingContent(sub) {
@@ -1489,6 +1496,17 @@ function uploadGrowthPhoto() {
 }
 function changeGrowthPhotoDate(date) {
   window._growthPhotoDate = date;
+  // Update visible text
+  const isToday = date === today();
+  const picker = document.getElementById('growth-date-picker');
+  if(picker){
+    picker.value = date;
+    const span = picker.previousElementSibling;
+    if(span){
+      const d=new Date(date);
+      span.textContent = isToday ? '今天' : `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+    }
+  }
   renderPage('growth');
 }
 // handleGrowthPhoto is now the compressed version below
