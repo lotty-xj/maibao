@@ -1489,22 +1489,27 @@ function renderGrowth() {
       <input type="file" id="growth-photo-input" accept="image/*" capture="environment" style="display:none" onchange="handleGrowthPhoto(event)">
     </div>
 
-    <!-- Weight Chart first -->
-    ${recs.length>=1?renderGrowthChart(recs,wData,hData,ageMonths):''}
-
-    <!-- Weight & Height -->
-    <div class="grid-2" style="margin-bottom:16px">
-      <div class="card card-pink" onclick="showWeightHistory()" style="cursor:pointer">
-        <div class="card-header"><div class="card-title"><span class="icon">⚖️</span>体重 <span style="font-size:10px;color:var(--text-muted);font-weight:400">点击看历史</span></div></div>
-        ${latest?.weight?`<div style="text-align:center;padding:12px 0"><div style="font-size:40px;font-weight:800;color:var(--pink-dark)">${latest.weight}<span style="font-size:16px">kg</span></div>
-          <div style="font-size:12px;color:var(--text-light)">最近：${latest.date.split(' ')[0]} · 标准：${ww?ww[1]+'kg ('+ww[0]+'-'+ww[2]+'kg)':'-'}</div></div>`:'<div class="empty-state"><div class="es-icon">⚖️</div></div>'}
-        <div style="text-align:center"><button class="btn btn-primary btn-sm" onclick="event.stopPropagation();addGrowth('weight')">记录体重</button></div></div>
-      <div class="card card-blue" onclick="showHeightHistory()" style="cursor:pointer">
-        <div class="card-header"><div class="card-title"><span class="icon">📏</span>身高 <span style="font-size:10px;color:var(--text-muted);font-weight:400">点击看历史</span></div></div>
-        ${latest?.height?`<div style="text-align:center;padding:12px 0"><div style="font-size:40px;font-weight:800;color:var(--blue-dark)">${latest.height}<span style="font-size:16px">cm</span></div>
-          <div style="font-size:12px;color:var(--text-light)">最近：${latest.date.split(' ')[0]} · 标准：${wh?wh[1]+'cm ('+wh[0]+'-'+wh[2]+'cm)':'-'}</div></div>`:'<div class="empty-state"><div class="es-icon">📏</div></div>'}
-        <div style="text-align:center"><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();addGrowth('height')">记录身高</button></div></div>
+    <!-- Weight Card -->
+    <div class="card card-pink" onclick="showWeightHistory()" style="cursor:pointer;margin-bottom:12px">
+      <div class="card-header"><div class="card-title"><span class="icon">⚖️</span>体重 <span style="font-size:10px;color:var(--text-muted);font-weight:400">点击看历史</span></div></div>
+      ${latest?.weight?`<div style="text-align:center;padding:12px 0"><div style="font-size:40px;font-weight:800;color:var(--pink-dark)">${latest.weight}<span style="font-size:16px">kg</span></div>
+        <div style="font-size:12px;color:var(--text-light)">最近：${latest.date.split(' ')[0]} · 标准：${ww?ww[1]+'kg ('+ww[0]+'-'+ww[2]+'kg)':'-'}</div></div>`:'<div class="empty-state"><div class="es-icon">⚖️</div></div>'}
+      <div style="text-align:center;padding-bottom:8px"><button class="btn btn-primary btn-sm" onclick="event.stopPropagation();addGrowth('weight')">记录体重</button></div>
     </div>
+
+    <!-- Weight Chart -->
+    ${recs.filter(r=>r.weight).length>=1?renderGrowthChart('weight',recs.filter(r=>r.weight).map(r=>({...r,y:parseFloat(r.weight)})),wData,ageMonths,'⚖️ 体重曲线','kg','var(--pink)','var(--pink-dark)'):''}
+
+    <!-- Height Card -->
+    <div class="card card-blue" onclick="showHeightHistory()" style="cursor:pointer;margin-bottom:12px">
+      <div class="card-header"><div class="card-title"><span class="icon">📏</span>身高 <span style="font-size:10px;color:var(--text-muted);font-weight:400">点击看历史</span></div></div>
+      ${latest?.height?`<div style="text-align:center;padding:12px 0"><div style="font-size:40px;font-weight:800;color:var(--blue-dark)">${latest.height}<span style="font-size:16px">cm</span></div>
+        <div style="font-size:12px;color:var(--text-light)">最近：${latest.date.split(' ')[0]} · 标准：${wh?wh[1]+'cm ('+wh[0]+'-'+wh[2]+'cm)':'-'}</div></div>`:'<div class="empty-state"><div class="es-icon">📏</div></div>'}
+      <div style="text-align:center;padding-bottom:8px"><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();addGrowth('height')">记录身高</button></div>
+    </div>
+
+    <!-- Height Chart -->
+    ${recs.filter(r=>r.height).length>=1?renderGrowthChart('height',recs.filter(r=>r.height).map(r=>({...r,y:parseFloat(r.height)})),hData,ageMonths,'📏 身高曲线','cm','var(--blue)','var(--blue-dark)'):''}
 
     <div class="card card-green" style="margin-bottom:16px"><div class="card-header"><div class="card-title"><span class="icon">🏥</span>儿保检查</div><button class="btn btn-outline btn-sm" onclick="addHealth()">+ 添加</button></div>
       ${DATA.healthChecks.map(h=>`<div class="tl-item"><div class="tl-dot ${h.completed?'done':'pending'}">${h.completed?'✓':'○'}</div><div class="tl-content"><div class="tl-title">${h.name}</div><div class="tl-date">建议：${h.age}${h.nextDate?' · 下次：'+h.nextDate:''}</div></div><div style="display:flex;gap:4px">${!h.completed?`<button class="btn btn-green btn-xs" onclick="markHealth('${h.id}')">完成</button>`:`<span class="tag tag-green">✅</span>`}<button class="btn btn-outline btn-xs" onclick="editHealth('${h.id}')">编辑</button></div></div>`).join('')}
@@ -1661,24 +1666,22 @@ function viewPhoto(data) {
   openPhotoViewer(data);
 }
 
-function renderGrowthChart(recs,wData,hData,ageMonths) {
+function renderGrowthChart(type, points, refData, ageMonths, title, unit, lineColor, labelColor) {
   const W=600,H=280,pl=50,pr=30,pt=20,pb=40,cw=W-pl-pr,ch=H-pt-pb;
-  const wRecs=recs.filter(r=>!isNaN(parseFloat(r.weight))).map(r=>({x:getAgeM(r),y:parseFloat(r.weight),label:r.weight+'kg',d:r.date.split(' ')[0]}));
-  const hRecs=recs.filter(r=>!isNaN(parseFloat(r.height))).map(r=>({x:getAgeM(r),y:parseFloat(r.height),label:r.height+'cm',d:r.date.split(' ')[0]}));
-  const whoK=Object.keys(wData).map(Number).sort((a,b)=>a-b);
-  const w=wRecs.map(r=>r.y);const h=hRecs.map(r=>r.y);whoK.forEach(k=>{w.push(wData[k][0]);w.push(wData[k][2]);});
-  const wMin=Math.floor(Math.min(...w))-0.5,wMax=Math.ceil(Math.max(...w))+0.5;
-  const xMax=Math.max(ageMonths+2,Math.max(...recs.map(r=>getAgeM(r)))+2,12);
-  function x(v){return pl+(v/(xMax))*cw;}function y(v,min,max){return pt+ch-((v-min)/(max-min))*ch;}
-  const pts50=whoK.map(k=>({x:k,y:wData[k][1]})),pts3=whoK.map(k=>({x:k,y:wData[k][0]})),pts97=whoK.map(k=>({x:k,y:wData[k][2]}));
-  function pline(pts,min,max,c,d){return pts.length<2?'':`<polyline points="${pts.map(p=>x(p.x)+','+y(p.y,min,max)).join(' ')}" fill="none" stroke="${c}" stroke-width="${d?1.5:2}" stroke-dasharray="${d||''}"/>`;}
-  let grid='';for(let i=0;i<=5;i++){const v=wMin+(wMax-wMin)/5*i;const yy=y(v,wMin,wMax);grid+=`<line x1="${pl}" y1="${yy}" x2="${W-pr}" y2="${yy}" stroke="#eee" stroke-width="0.5"/><text x="${pl-8}" y="${yy+4}" text-anchor="end" font-size="9" fill="#999">${v.toFixed(1)}</text>`;}
+  const whoK=Object.keys(refData).map(Number).sort((a,b)=>a-b);
+  const allVals=points.map(r=>r.y);whoK.forEach(k=>{allVals.push(refData[k][0]);allVals.push(refData[k][2]);});
+  const vMin=Math.floor(Math.min(...allVals))-0.5,vMax=Math.ceil(Math.max(...allVals))+0.5;
+  const xMax=Math.max(ageMonths+2,Math.max(...points.map(r=>getAgeM(r)))+2,12);
+  function x(v){return pl+(v/(xMax))*cw;}function y(v){return pt+ch-((v-vMin)/(vMax-vMin))*ch;}
+  const pts50=whoK.map(k=>({x:k,y:refData[k][1]})),pts3=whoK.map(k=>({x:k,y:refData[k][0]})),pts97=whoK.map(k=>({x:k,y:refData[k][2]}));
+  function pline(pts,c,d){return pts.length<2?'':`<polyline points="${pts.map(p=>x(p.x)+','+y(p.y)).join(' ')}" fill="none" stroke="${c}" stroke-width="${d?1.5:2}" stroke-dasharray="${d||''}"/>`;}
+  let grid='';for(let i=0;i<=5;i++){const v=vMin+(vMax-vMin)/5*i;const yy=y(v);grid+=`<line x1="${pl}" y1="${yy}" x2="${W-pr}" y2="${yy}" stroke="#eee" stroke-width="0.5"/><text x="${pl-8}" y="${yy+4}" text-anchor="end" font-size="9" fill="#999">${v.toFixed(1)}</text>`;}
   return `
-    <div class="card card-white" style="margin-bottom:16px"><div class="card-header"><div class="card-title"><span class="icon">📈</span>体重曲线 (kg)</div></div>
+    <div class="card card-white" style="margin-bottom:12px"><div class="card-header"><div class="card-title"><span class="icon">📈</span>${title}</div></div>
       <div class="chart-wrap"><svg viewBox="0 0 ${W} ${H}" style="max-width:${W}px">
-        ${grid}${pline(pts3,wMin,wMax,'#ddd','4,4')}${pline(pts50,wMin,wMax,'#ccc','4,4')}${pline(pts97,wMin,wMax,'#ddd','4,4')}
-        ${pline(wRecs,wMin,wMax,'var(--pink)')}
-        ${wRecs.map(p=>`<circle cx="${x(p.x)}" cy="${y(p.y,wMin,wMax)}" r="5" fill="var(--pink)" stroke="#fff" stroke-width="2"/><text x="${x(p.x)}" y="${y(p.y,wMin,wMax)-10}" text-anchor="middle" font-size="9" fill="var(--pink-dark)" font-weight="700">${p.label}</text>`).join('')}
+        ${grid}${pline(pts3,'#ddd','4,4')}${pline(pts50,'#ccc','4,4')}${pline(pts97,'#ddd','4,4')}
+        ${pline(points,lineColor)}
+        ${points.map(p=>`<circle cx="${x(p.x)}" cy="${y(p.y)}" r="5" fill="${lineColor}" stroke="#fff" stroke-width="2"/><text x="${x(p.x)}" y="${y(p.y)-10}" text-anchor="middle" font-size="9" fill="${labelColor}" font-weight="700">${p.y}${unit}</text>`).join('')}
         ${[0,3,6,9,12,18,24].filter(m=>m<=xMax).map(m=>`<text x="${x(m)}" y="${H-10}" text-anchor="middle" font-size="9" fill="#999">${m}月</text>`).join('')}
         <line x1="${pl}" y1="${H-pb}" x2="${W-pr}" y2="${H-pb}" stroke="#ddd"/></svg></div></div>`;
 }
