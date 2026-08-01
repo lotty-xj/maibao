@@ -639,45 +639,59 @@ async function syncPull(silent = false) {
     if (!resp.ok) return;
     const { data, version } = await resp.json();
     if (version > SYNC_VERSION) {
-      // Merge server data, but NEVER overwrite local currentMember
+      // Server is source of truth - just take its data
       const local = getLocalData();
-      const myName = localStorage.getItem('maibao_my_name') || local.baby?.currentMember || '';
       const merged = { ...data,
-        baby: { ...local.baby, ...data.baby, currentMember: myName },
-        settings: { ...local.settings, ...data.settings }
+        baby: { ...data.baby, currentMember: local.baby?.currentMember || '' },
+        settings: { ...(data.settings||{}), ...(local.settings||{}) },
+        suppSettings: { ...(data.suppSettings||{}), ...(local.suppSettings||{}) }
       };
       localStorage.setItem('maibao_data', JSON.stringify(merged));
       SYNC_VERSION = version;
       refreshLocalData();
-
-      // CRITICAL FIX: Re-render the page so user sees the new data
       if (!silent) {
-        renderPage(currentPage);
-        updateSel();
-        updateBabyDisp();
-      } else {
-        // Silent update: refresh data, gentle re-render after delay
-        setTimeout(() => {
-          if (document.hidden) return; // skip if tab in background
-          renderPage(currentPage);
-        }, 300);
-      }
-
-      // Show notification only if data came from someone else recently
-      const now = Date.now();
-      if (lastSyncFromServer && (now - lastSyncFromServer) > 3000) {
-        lastSyncFromServer = now;
+        setTimeout(() => { if(!document.hidden) renderPage(currentPage); }, 300);
       }
     }
-  } catch (e) { /* silently fail */ }
+  } catch (e) {}
 }
 
 async function syncPush(notify = false) {
   if (!SYNC_ENABLED) return;
-  const data = getLocalData();
-  const pushData = { ...data, baby: { ...data.baby, currentMember: '' } };
-  pushData._version = SYNC_VERSION;
+  // CRITICAL: Always pull latest data first to avoid overwriting others' changes
   try {
+    const pullResp = await fetch(SYNC_URL + '/data', { signal: AbortSignal.timeout(5000) });
+    if(pullResp.ok){
+      const { data: serverData, version: serverVersion } = await pullResp.json();
+      if(serverVersion > SYNC_VERSION){
+        // Server has newer data - merge our local changes into it
+        const local = getLocalData();
+        // Keep all server's feeding/poop/supplement/growth records (they might be newer)
+        // Merge arrays: keep all unique entries from both
+        const merged = { ...serverData, _version: serverVersion };
+        // For each array, merge unique entries from local that don't exist on server
+        ['feedingRecords','poopRecords','supplementRecords','growthRecords','milestones',
+         'vaccineRecords','healthChecks','educationRecords','growthPhotos'].forEach(key => {
+          const serverIds = new Set((serverData[key]||[]).map(r=>r.id));
+          const localNew = (local[key]||[]).filter(r=>!serverIds.has(r.id));
+          merged[key] = [...(serverData[key]||[]), ...localNew];
+        });
+        // Preserve local preferences
+        merged.baby = { ...serverData.baby, ...local.baby };
+        merged.settings = { ...serverData.settings, ...local.settings };
+        merged.suppSettings = { ...(serverData.suppSettings||{}), ...(local.suppSettings||{}) };
+        localStorage.setItem('maibao_data', JSON.stringify(merged));
+        SYNC_VERSION = serverVersion;
+        refreshLocalData();
+      }
+    }
+  } catch(e) {}
+
+  // Now push the merged data
+  try {
+    const data = getLocalData();
+    const pushData = { ...data, baby: { ...data.baby, currentMember: '' } };
+    pushData._version = SYNC_VERSION;
     const resp = await fetch(SYNC_URL + '/sync', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(pushData),
