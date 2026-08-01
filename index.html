@@ -622,7 +622,8 @@ let lastSyncFromServer = null; // track last sync for notification
 async function syncCheck() {
   if (!SYNC_ENABLED) return;
   try {
-    const resp = await fetch(SYNC_URL + '/version', { signal: AbortSignal.timeout(3000) });
+    // Longer timeout for cold-start (free tier hibernation)
+    const resp = await fetch(SYNC_URL + '/version', { signal: AbortSignal.timeout(30000) });
     if (!resp.ok) throw new Error('Server error');
     const { version } = await resp.json();
     if (version > SYNC_VERSION) {
@@ -667,15 +668,18 @@ async function syncPull(silent = false) {
 async function syncPush(notify = false) {
   if (!SYNC_ENABLED) return;
   try {
+    // First wake up the server (free tier hibernation takes 30-60s to wake)
+    await fetch(SYNC_URL + '/health-check', { signal: AbortSignal.timeout(60000) }).catch(()=>{});
+    
     const data = getLocalData();
     const pushData = { ...data, baby: { ...data.baby, currentMember: '' } };
     pushData._version = SYNC_VERSION;
-    updateSyncUI(false); // Show syncing
+    updateSyncUI(false);
     document.getElementById('sync-text').textContent = '同步中...';
     const resp = await fetch(SYNC_URL + '/sync', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(pushData),
-      signal: AbortSignal.timeout(10000)
+      signal: AbortSignal.timeout(30000)
     });
     if (resp.ok) {
       const result = await resp.json();
@@ -754,7 +758,7 @@ function startPolling() {
   POLL_INTERVAL = setInterval(syncCheck, 3000);
 }
 
-// Manual retry with backoff
+// Manual retry with backoff for cold-start
 let retryAttempts = 0;
 function retrySync() {
   retryAttempts = 0;
@@ -762,16 +766,19 @@ function retrySync() {
 }
 function trySyncWithBackoff() {
   retryAttempts++;
-  const delay = Math.min(retryAttempts * 2000, 10000);
-  toast('🔄 正在重试同步... (' + retryAttempts + ')', 'info');
+  const delay = retryAttempts === 1 ? 1000 : Math.min(retryAttempts * 5000, 30000);
+  toast('🔄 正在唤醒服务器重试... (' + retryAttempts + ')', 'info');
   testConnection().then(online => {
     if(online){
       syncPull(true).then(() => {
         toast('✅ 同步成功！', 'success');
         retryAttempts = 0;
       });
-    } else {
+    } else if(retryAttempts < 6) {
       setTimeout(trySyncWithBackoff, delay);
+    } else {
+      toast('❌ 服务器无响应，请稍后再试', 'error');
+      retryAttempts = 0;
     }
   });
 }
@@ -779,7 +786,8 @@ function trySyncWithBackoff() {
 // Test connection on init
 async function testConnection() {
   try {
-    const resp = await fetch(SYNC_URL + '/health-check', { signal: AbortSignal.timeout(2000) });
+    // Wake up the server first (Railway free tier hibernation)
+    const resp = await fetch(SYNC_URL + '/health-check', { signal: AbortSignal.timeout(60000) });
     if (resp.ok) {
       SYNC_ENABLED = true;
       return true;
