@@ -107,15 +107,25 @@ app.post('/api/sync', (req, res) => {
   
   const serverData = readData();
   
-  // Merge strategy: client data overwrites server data
-  // but preserve fields that the server has and client doesn't
+  // SMART MERGE: keep all unique records from both client and server
   const merged = { ...serverData, ...clientData };
-  merged._version = Math.max(serverData._version || 0, clientData._version || 0);
+  merged._version = (serverData._version || 0) + 1;
   merged._activityLog = serverData._activityLog || [];
   
-  writeData(merged, true);
+  // For each array, merge unique entries by ID
+  ['feedingRecords','poopRecords','supplementRecords','growthRecords','milestones',
+   'vaccineRecords','healthChecks','educationRecords','growthPhotos'].forEach(key => {
+    const serverIds = new Set((serverData[key]||[]).map(r=>r.id));
+    const clientNew = (clientData[key]||[]).filter(r=>!serverIds.has(r.id));
+    merged[key] = [...(serverData[key]||[]), ...clientNew];
+  });
   
-  // Broadcast to polling clients that data changed
+  // Preserve server's baby info and settings if client didn't provide them
+  merged.baby = { ...serverData.baby, ...clientData.baby };
+  merged.settings = { ...serverData.settings, ...(clientData.settings||{}) };
+  merged.suppSettings = { ...(serverData.suppSettings||{}), ...(clientData.suppSettings||{}) };
+  
+  writeData(merged, true);
   broadcastUpdate();
   
   res.json({ success: true, version: merged._version, lastModified: merged._lastModified });
