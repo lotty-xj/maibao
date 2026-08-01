@@ -1622,7 +1622,7 @@ let photoViewerIdx = 0;
 let photoViewerList = [];
 
 function openPhotoViewer(data) {
-  const photos = DATA.growthPhotos||[];
+  const photos = (DATA.growthPhotos||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
   photoViewerList = photos;
   photoViewerIdx = photos.findIndex(p=>p.data===data);
   if(photoViewerIdx<0) return;
