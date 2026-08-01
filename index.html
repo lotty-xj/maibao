@@ -1500,10 +1500,9 @@ function renderGrowth() {
           ＋<br>拍照
         </div>
         ${dayPhotos.map((p,i)=>{
-          const idx = DATA.growthPhotos.indexOf(p);
           return `
           <div style="flex-shrink:0;text-align:center;position:relative">
-            <div style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#FF7675;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;z-index:2;box-shadow:0 2px 6px rgba(0,0,0,0.2)" onclick="event.stopPropagation();delGrowthPhoto(${idx})">✕</div>
+            <div style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#FF7675;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;z-index:2;box-shadow:0 2px 6px rgba(0,0,0,0.2)" onclick="event.stopPropagation();delGrowthPhoto('${p.id}')">✕</div>
             <img src="${p.data}" style="width:80px;height:80px;border-radius:12px;object-fit:cover;border:2px solid var(--pink-light);cursor:pointer" onclick="viewPhoto('${p.data}')">
             ${p.note?`<div style="font-size:9px;color:var(--text-light);margin-top:2px;max-width:80px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${p.note}</div>`:`<div style="font-size:10px;color:var(--text-light);margin-top:2px">${p.date}</div>`}
           </div>
@@ -1606,9 +1605,11 @@ function saveGrowthPhoto() {
   window._tempPhoto = null;
   saveLocal(true);closeModal();toast('✅ 照片已保存 ('+photoDate+')');renderPage('growth');
 }
-function delGrowthPhoto(idx) {
+function delGrowthPhoto(id) {
   showConfirm('删除照片','确认删除这张成长照片？',()=>{
-    if(DATA.growthPhotos) DATA.growthPhotos.splice(idx,1);
+    if(!DATA.growthPhotos) return;
+    const idx = DATA.growthPhotos.findIndex(p=>p.id===id);
+    if(idx>=0) DATA.growthPhotos.splice(idx,1);
     saveLocal(true);toast('已删除');renderPage('growth');
   });
 }
@@ -1985,7 +1986,7 @@ function handleGrowthPhoto(event) {
     showModal('📸 预览照片',
       `<div style="text-align:center">
         <img src="${compressed}" style="width:100%;max-height:60vh;border-radius:8px;object-fit:contain">
-        <div style="margin-top:10px;font-size:12px;color:var(--text-light)">${today()}</div>
+        <div style="margin-top:10px;font-size:12px;color:var(--text-light)">📅 ${window._growthPhotoDate || today()}</div>
         <div style="margin-top:6px"><input class="form-input" id="photo-note" placeholder="写一句话记录这一刻（选填）"></div>
       </div>`,
       `<button class="btn btn-outline btn-sm" onclick="closeModal()">重拍</button>
