@@ -1372,12 +1372,15 @@ function renderGrowth() {
         <div class="photo-avatar lg" style="width:80px;height:80px;flex-shrink:0;background:var(--pink-light);font-size:14px;color:var(--pink)" onclick="uploadGrowthPhoto()">
           ＋<br>拍照
         </div>
-        ${DATA.growthPhotos.slice(-10).reverse().map(p=>`
-          <div style="flex-shrink:0;text-align:center;cursor:pointer" onclick="viewPhoto('${p.data}')">
-            <img src="${p.data}" style="width:80px;height:80px;border-radius:12px;object-fit:cover;border:2px solid var(--pink-light)">
+        ${DATA.growthPhotos.slice(-10).reverse().map((p,i)=>{
+          const idx = DATA.growthPhotos.length - 1 - i; // actual index in array
+          return `
+          <div style="flex-shrink:0;text-align:center;position:relative">
+            <div style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#FF7675;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;z-index:2;box-shadow:0 2px 6px rgba(0,0,0,0.2)" onclick="event.stopPropagation();delGrowthPhoto(${idx})">✕</div>
+            <img src="${p.data}" style="width:80px;height:80px;border-radius:12px;object-fit:cover;border:2px solid var(--pink-light);cursor:pointer" onclick="viewPhoto('${p.data}')">
             <div style="font-size:10px;color:var(--text-light);margin-top:2px">${p.date}</div>
           </div>
-        `).join('')}
+        `}).join('')}
         ${DATA.growthPhotos.length===0?'<div style="font-size:13px;color:var(--text-muted);padding:20px">点击＋拍照，记录宝宝每天的样子 📸</div>':''}
       </div>
       <input type="file" id="growth-photo-input" accept="image/*" capture="environment" style="display:none" onchange="handleGrowthPhoto(event)">
@@ -1435,6 +1438,15 @@ function saveGrowthPhoto() {
   DATA.growthPhotos.push({date:today(),data:window._tempPhoto,note});
   window._tempPhoto = null;
   saveLocal(true);closeModal();toast('✅ 照片已保存');renderPage('growth');
+}
+function delGrowthPhoto(idx) {
+  showConfirm('删除照片','确认删除这张成长照片？',()=>{
+    if(DATA.growthPhotos) DATA.growthPhotos.splice(idx,1);
+    saveLocal(true);toast('已删除');renderPage('growth');
+  });
+}
+function viewPhoto(data) {
+  showModal('📸 成长照片',`<img src="${data}" style="width:100%;border-radius:8px">`);
 }
   showModal('📸 成长照片',`<img src="${data}" style="width:100%;border-radius:8px">`);
 }
