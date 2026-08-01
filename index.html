@@ -669,25 +669,29 @@ async function syncPull(silent = false) {
   } catch (e) { /* silently fail */ }
 }
 
-async function syncPush(immediate = false) {
+async function syncPush(notify = false) {
   if (!SYNC_ENABLED) return;
   const data = getLocalData();
-  // NEVER sync currentMember - each device keeps its own
   const pushData = { ...data, baby: { ...data.baby, currentMember: '' } };
   pushData._version = SYNC_VERSION;
   try {
     const resp = await fetch(SYNC_URL + '/sync', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(pushData),
-      signal: AbortSignal.timeout(15000)
+      signal: AbortSignal.timeout(10000)
     });
     if (resp.ok) {
       const result = await resp.json();
       SYNC_VERSION = result.version;
       updateSyncUI(true);
+      if(notify) toast('✅ 已同步到云端', 'success');
+    } else {
+      updateSyncUI(false);
+      if(notify) toast('⚠️ 同步失败', 'error');
     }
   } catch (e) {
     updateSyncUI(false);
+    if(notify) toast('⚠️ 网络异常，稍后重试', 'error');
   }
 }
 
