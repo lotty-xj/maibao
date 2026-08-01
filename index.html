@@ -1176,10 +1176,12 @@ function renderFeeding() {
   const isToday = currentFeedingDate === today();
   const d=new Date(currentFeedingDate);
   return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+    <button class="btn btn-ghost btn-xs" onclick="changeFeedingDate(prevDay(currentFeedingDate))" style="font-size:16px">◀</button>
     <div style="display:flex;align-items:center;gap:0;background:#fff;border-radius:12px;padding:4px 8px;box-shadow:var(--shadow)">
-      <span style="font-size:16px;font-weight:800;color:var(--pink-dark);padding:4px 6px 4px 4px">${isToday?'📅 今天':`📅 ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`}</span>
+      <span id="feeding-date-label" style="font-size:16px;font-weight:800;color:var(--pink-dark);padding:4px 6px 4px 4px">${isToday?'📅 今天':`📅 ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`}</span>
       <input type="date" style="border:none;background:transparent;font-size:0;width:22px;height:32px;padding:0;cursor:pointer;color:transparent" value="${currentFeedingDate}" onchange="changeFeedingDate(this.value)" id="feeding-date-picker">
     </div>
+    <button class="btn btn-ghost btn-xs" onclick="changeFeedingDate(nextDay(currentFeedingDate))" style="font-size:16px">▶</button>
   </div>
   <div class="tabs" id="feeding-tabs">
     <div class="tab active" data-sub="milk">🍼 奶量</div>
@@ -1196,12 +1198,11 @@ function changeFeedingDate(date) {
   currentFeedingDate = date;
   document.getElementById('feeding-date-picker').value = date;
   renderFeedingSub(currentFeedingSub);
-  // Also update the header date text
-  const span = document.querySelector('#feeding-date-picker')?.previousElementSibling;
+  const span = document.getElementById('feeding-date-label');
   if(span){
     const isToday = date === today();
     const d=new Date(date);
-    span.textContent = isToday ? '今天' : `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+    span.textContent = isToday ? '📅 今天' : `📅 ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
   }
 }
 
@@ -1412,11 +1413,12 @@ function renderGrowth() {
     <div class="card card-pink" style="margin-bottom:16px">
       <div class="card-header"><div class="card-title"><span class="icon">📸</span>每日成长照片</div></div>
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
-        <button class="btn btn-ghost btn-xs" onclick="changeGrowthPhotoDate(prevDay(photoDate))" style="font-size:16px">◀</button>
+        <button class="btn btn-ghost btn-xs" onclick="changeGrowthPhotoDate(prevDay(window._growthPhotoDate||today()))" style="font-size:16px">◀</button>
         <div style="display:flex;align-items:center;background:#fff;border-radius:12px;padding:4px 8px;box-shadow:var(--shadow)">
-          <span style="font-size:16px;font-weight:800;color:var(--pink-dark);padding:4px 6px 4px 4px">${isToday?'📸 今天':`📸 ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`}</span>
+          <span id="growth-date-label" style="font-size:16px;font-weight:800;color:var(--pink-dark);padding:4px 6px 4px 4px">${isToday?'📸 今天':`📸 ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`}</span>
           <input type="date" style="border:none;background:transparent;font-size:0;width:22px;height:32px;padding:0;cursor:pointer;color:transparent" value="${photoDate}" onchange="changeGrowthPhotoDate(this.value)" id="growth-date-picker">
         </div>
+        <button class="btn btn-ghost btn-xs" onclick="changeGrowthPhotoDate(nextDay(window._growthPhotoDate||today()))" style="font-size:16px">▶</button>
         <span style="font-size:11px;color:var(--text-muted);margin-left:auto">${isToday?'共'+DATA.growthPhotos.length+'张':dayPhotos.length+'张'}</span>
       </div>
       <div style="display:flex;flex-wrap:nowrap;gap:10px;overflow-x:auto;padding:8px 4px;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;scroll-snap-type:x mandatory" id="growth-photo-row">
@@ -1506,15 +1508,13 @@ function changeGrowthPhotoDate(date) {
   window._growthPhotoDate = date;
   // Update visible text
   const isToday = date === today();
-  const picker = document.getElementById('growth-date-picker');
-  if(picker){
-    picker.value = date;
-    const span = picker.previousElementSibling;
-    if(span){
-      const d=new Date(date);
-      span.textContent = isToday ? '今天' : `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
-    }
+  const span = document.getElementById('growth-date-label');
+  if(span){
+    const d=new Date(date);
+    span.textContent = isToday ? '📸 今天' : `📸 ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
   }
+  const picker = document.getElementById('growth-date-picker');
+  if(picker) picker.value = date;
   renderPage('growth');
 }
 // handleGrowthPhoto is now the compressed version below
@@ -1533,89 +1533,82 @@ function delGrowthPhoto(idx) {
     saveLocal(true);toast('已删除');renderPage('growth');
   });
 }
-function viewPhoto(data) {
+// Global photo viewer
+let photoViewerIdx = 0;
+let photoViewerList = [];
+
+function openPhotoViewer(data) {
   const photos = DATA.growthPhotos||[];
-  const idx = photos.findIndex(p=>p.data===data);
-  if(idx<0) return;
+  photoViewerList = photos;
+  photoViewerIdx = photos.findIndex(p=>p.data===data);
+  if(photoViewerIdx<0) return;
+  renderPhotoViewer();
+}
 
-  // Build fullscreen viewer
-  let touchStartX = 0, touchEndX = 0;
-  let currentIdx = idx;
-
-  function renderViewer() {
-    const p = photos[currentIdx];
-    return `
-      <div id="photo-viewer" style="position:fixed;inset:0;background:#000;z-index:200;display:flex;flex-direction:column" ontouchstart="window._pvStartX=event.touches[0].clientX" ontouchend="window._pvEndX=event.changedTouches[0].clientX;navigatePhoto()">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;color:#fff;font-size:13px;background:rgba(0,0,0,0.5)">
-          <span>📸 ${p.date} ${p.date.includes(' ')?p.date.split(' ')[1].substring(0,5):''}</span>
-          <span style="color:#aaa">${currentIdx+1}/${photos.length}</span>
-          <button onclick="closePhotoViewer()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer">✕</button>
-        </div>
-        <div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden" 
-          ontouchstart="let t=event.touches[0];window._pvStartX=t.clientX;window._pvStartY=t.clientY"
-          ontouchend="let t=event.changedTouches[0];if(Math.abs(t.clientX-window._pvStartX)>50&&Math.abs(t.clientY-window._pvStartY)<Math.abs(t.clientX-window._pvStartX)){navigatePhoto(t.clientX<window._pvStartX?1:-1)}">
-          <img src="${p.data}" style="max-width:100%;max-height:100%;object-fit:contain">
-        </div>
-        <div style="display:flex;justify-content:center;gap:20px;padding:12px;background:rgba(0,0,0,0.5)">
-          <button class="btn btn-ghost btn-sm" style="color:#fff;font-size:20px" onclick="navigatePhoto(-1)">◀</button>
-          <button class="btn btn-ghost btn-sm" style="color:#fff;font-size:20px" onclick="navigatePhoto(1)">▶</button>
-          <button class="btn btn-ghost btn-sm" style="color:#FF7675" onclick="confirmDeletePhoto()">🗑</button>
-        </div>
-      </div>`;
-  }
-
-  window._photoViewerIdx = idx;
-  window._photoViewerPhotos = photos;
-  window.navigatePhoto = function(dir) {
-    const photos = window._photoViewerPhotos;
-    let idx = window._photoViewerIdx + (dir||0);
-    // Auto-detect swipe direction
-    if(dir===undefined){
-      const diff = (window._pvEndX||0) - (window._pvStartX||0);
-      if(Math.abs(diff)>50) idx = window._photoViewerIdx + (diff<0?1:-1);
-    }
-    if(idx<0||idx>=photos.length) return;
-    window._photoViewerIdx = idx;
-    const viewer = document.getElementById('photo-viewer');
-    if(viewer) {
-      const p = photos[idx];
-      viewer.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;color:#fff;font-size:13px;background:rgba(0,0,0,0.5)">
-          <span>📸 ${p.date} ${p.date.includes(' ')?p.date.split(' ')[1].substring(0,5):''}</span>
-          <span style="color:#aaa">${idx+1}/${photos.length}</span>
-          <button onclick="closePhotoViewer()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer">✕</button>
-        </div>
-        <div style="flex:1;display:flex;align-items:center;justify-content:center" 
-          ontouchstart="let t=event.touches[0];window._pvStartX=t.clientX;window._pvStartY=t.clientY"
-          ontouchend="let t=event.changedTouches[0];if(Math.abs(t.clientX-window._pvStartX)>50&&Math.abs(t.clientY-window._pvStartY)<Math.abs(t.clientX-window._pvStartX)){navigatePhoto(t.clientX<window._pvStartX?1:-1)}">
-          <img src="${p.data}" style="max-width:100%;max-height:100%;object-fit:contain">
-        </div>
-        <div style="display:flex;justify-content:center;gap:20px;padding:12px;background:rgba(0,0,0,0.5)">
-          <button class="btn btn-ghost btn-sm" style="color:#fff;font-size:20px" onclick="navigatePhoto(-1)">◀</button>
-          <button class="btn btn-ghost btn-sm" style="color:#fff;font-size:20px" onclick="navigatePhoto(1)">▶</button>
-          <button class="btn btn-ghost btn-sm" style="color:#FF7675" onclick="confirmDeletePhoto()">🗑</button>
-        </div>`;
-    }
-  };
-  window.closePhotoViewer = function() {
-    const v = document.getElementById('photo-viewer'); if(v) v.remove();
-    window._photoViewerIdx = null;
-    window._photoViewerPhotos = null;
-  };
-  window.confirmDeletePhoto = function() {
-    const idx = window._photoViewerIdx;
-    if(idx===null || idx===undefined) return;
-    showConfirm('删除照片','确认删除这张照片？',()=>{
-      if(DATA.growthPhotos) DATA.growthPhotos.splice(idx,1);
-      saveLocal(true);toast('已删除');
-      window.closePhotoViewer();
-      renderPage('growth');
-    });
-  };
-
+function renderPhotoViewer() {
+  const p = photoViewerList[photoViewerIdx];
+  if(!p) return;
+  const timeStr = p.date.includes(' ') ? p.date.split(' ')[1].substring(0,5) : '';
   const div = document.createElement('div');
-  div.innerHTML = renderViewer();
-  document.body.appendChild(div.firstElementChild);
+  div.id = 'photo-viewer';
+  div.style.cssText = 'position:fixed;inset:0;background:#000;z-index:200;display:flex;flex-direction:column';
+  div.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;color:#fff;font-size:13px;background:rgba(0,0,0,0.5)">
+      <span>📸 ${p.date} ${timeStr}</span>
+      <span style="color:#aaa">${photoViewerIdx+1}/${photoViewerList.length}</span>
+      <button onclick="closePhotoViewer()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer">✕</button>
+    </div>
+    <div style="flex:1;display:flex;align-items:center;justify-content:center" 
+      ontouchstart="photoSwipeStart(event)"
+      ontouchend="photoSwipeEnd(event)">
+      <img src="${p.data}" style="max-width:100%;max-height:100%;object-fit:contain">
+    </div>
+    <div style="display:flex;justify-content:center;gap:20px;padding:12px;background:rgba(0,0,0,0.5)">
+      <button class="btn btn-ghost btn-sm" style="color:#fff;font-size:20px" onclick="navigatePhotoViewer(-1)">◀</button>
+      <button class="btn btn-ghost btn-sm" style="color:#fff;font-size:20px" onclick="navigatePhotoViewer(1)">▶</button>
+      <button class="btn btn-ghost btn-sm" style="color:#FF7675" onclick="deleteCurrentPhoto()">🗑</button>
+    </div>`;
+  document.body.appendChild(div);
+}
+
+function closePhotoViewer() {
+  const v = document.getElementById('photo-viewer');
+  if(v) v.remove();
+}
+
+function navigatePhotoViewer(dir) {
+  const newIdx = photoViewerIdx + dir;
+  if(newIdx<0 || newIdx>=photoViewerList.length) return;
+  photoViewerIdx = newIdx;
+  closePhotoViewer();
+  renderPhotoViewer();
+}
+
+function deleteCurrentPhoto() {
+  const idx = photoViewerIdx;
+  showConfirm('删除照片','确认删除这张照片？',()=>{
+    if(DATA.growthPhotos) DATA.growthPhotos.splice(idx,1);
+    saveLocal(true);toast('已删除');
+    closePhotoViewer();
+    renderPage('growth');
+  });
+}
+
+// Swipe handlers
+function photoSwipeStart(e) {
+  window._psX = e.touches[0].clientX;
+  window._psY = e.touches[0].clientY;
+}
+function photoSwipeEnd(e) {
+  const dx = e.changedTouches[0].clientX - (window._psX||0);
+  const dy = e.changedTouches[0].clientY - (window._psY||0);
+  if(Math.abs(dx)>50 && Math.abs(dy)<Math.abs(dx)){
+    navigatePhotoViewer(dx<0?1:-1);
+  }
+}
+
+function viewPhoto(data) {
+  openPhotoViewer(data);
 }
 
 function renderGrowthChart(recs,wData,hData,ageMonths) {
