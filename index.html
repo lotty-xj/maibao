@@ -1178,7 +1178,7 @@ function renderFeeding() {
   const d=new Date(currentFeedingDate);
   const dateLabel = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
   return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-    <div style="display:flex;align-items:center;gap:6px;background:#fff;border-radius:12px;padding:6px 14px;box-shadow:var(--shadow);cursor:pointer" onclick="document.getElementById('feeding-date-picker').showPicker()">
+    <div style="display:flex;align-items:center;gap:6px;background:#fff;border-radius:12px;padding:6px 14px;box-shadow:var(--shadow);cursor:pointer" onclick="openFeedingDatePicker()">
       <span style="font-size:20px">📅</span>
       <span style="font-size:14px;font-weight:800;color:var(--pink-dark)">${isToday?'今天':dateLabel}</span>
       <span style="font-size:11px;color:var(--text-muted)">▼</span>
@@ -1199,7 +1199,11 @@ function renderFeeding() {
 function prevDay(d){const dt=new Date(d);dt.setDate(dt.getDate()-1);return formatDate(dt);}
 function nextDay(d){const dt=new Date(d);dt.setDate(dt.getDate()+1);return formatDate(dt);}
 
-function changeFeedingDate(date) {
+function openFeedingDatePicker() {
+  const el = document.getElementById('feeding-date-picker');
+  if (el.showPicker) el.showPicker();
+  else el.click();
+}
   currentFeedingDate = date;
   renderFeedingSub(currentFeedingSub);
 }
