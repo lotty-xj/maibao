@@ -98,7 +98,7 @@ app.get('/api/version', (req, res) => {
   res.json({ version: data._version, lastModified: data._lastModified });
 });
 
-// Full sync - ALWAYS preserve server data, only add new client records
+// Full sync - Server is the SINGLE SOURCE OF TRUTH
 app.post('/api/sync', (req, res) => {
   const clientData = req.body;
   if (!clientData || !clientData.baby) {
@@ -107,7 +107,7 @@ app.post('/api/sync', (req, res) => {
   
   let data = readData();
   
-  // Track existing IDs
+  // MERGE ALL RECORD ARRAYS: take everything from both sides (by ID, never delete)
   const recordArrays = ['feedingRecords','poopRecords','supplementRecords','growthRecords','milestones',
     'vaccineRecords','healthChecks','educationRecords'];
   
@@ -115,42 +115,54 @@ app.post('/api/sync', (req, res) => {
     if(!data[key]) data[key]=[];
     if(!clientData[key]) return;
     const existingIds = new Set(data[key].map(r=>r.id));
-    // Only add records that don't already exist on server
-    const newRecords = clientData[key].filter(r=>!existingIds.has(r.id));
-    data[key].push(...newRecords);
+    clientData[key].forEach(r => { if(!existingIds.has(r.id)) data[key].push(r); });
   });
 
-  // For photos, use date+index as key
+  // MERGE GROWTH PHOTOS (by date+data fingerprint)
   if(clientData.growthPhotos){
     if(!data.growthPhotos) data.growthPhotos=[];
-    const existingKeys = new Set(data.growthPhotos.map(p=>p.date+'|'+p.note));
-    const newPhotos = clientData.growthPhotos.filter(p=>!existingKeys.has(p.date+'|'+(p.note||'')));
-    data.growthPhotos.push(...newPhotos);
+    const existingKeys = new Set(data.growthPhotos.map(p=>p.date+'|'+(p.note||'')));
+    clientData.growthPhotos.forEach(p => {
+      if(!existingKeys.has(p.date+'|'+(p.note||''))) data.growthPhotos.push(p);
+    });
   }
   
-  // Update baby/settings/members from client (merge, don't replace)
-  if(clientData.baby) data.baby = { ...data.baby, ...clientData.baby };
-  if(clientData.settings) data.settings = { ...data.settings, ...clientData.settings };
-  if(clientData.suppSettings) data.suppSettings = { ...(data.suppSettings||{}), ...clientData.suppSettings };
-  // Preserve members from both sides (merge by name, keep photos)
+  // MERGE MEMBERS (by name, keep photo if available)
   if(clientData.members && clientData.members.length > 0) {
     if(!data.members) data.members=[];
-    // If server has no members but client does, restore all of them
     if(data.members.length === 0){
       data.members = clientData.members;
     } else {
-      const existingNames = new Set(data.members.map(m=>m.name));
       clientData.members.forEach(m=>{
-        const idx = data.members.findIndex(sm=>sm.name===m.name);
-        if(idx>=0){ data.members[idx] = {...data.members[idx],...m}; }
-        else { data.members.push(m); }
+        const existing = data.members.find(sm=>sm.name===m.name);
+        if(existing){
+          // Keep whichever has more data (photo, etc)
+          existing.role = existing.role || m.role;
+          existing.photo = existing.photo || m.photo;
+          existing.emoji = existing.emoji || m.emoji;
+        } else {
+          data.members.push(m);
+        }
       });
     }
   }
   
+  // MERGE BABY/SETTINGS (keep whichever is more complete)
+  if(clientData.baby){
+    data.baby.name = data.baby.name || clientData.baby.name;
+    data.baby.birthDate = data.baby.birthDate || clientData.baby.birthDate;
+    data.baby.birthTime = data.baby.birthTime || clientData.baby.birthTime;
+    data.baby.gender = data.baby.gender || clientData.baby.gender;
+    data.baby.photo = data.baby.photo || clientData.baby.photo;
+  }
+  if(clientData.settings) data.settings = { ...(data.settings||{}), ...clientData.settings };
+  if(clientData.suppSettings) data.suppSettings = { ...(data.suppSettings||{}), ...clientData.suppSettings };
+  
   writeData(data, true);
   broadcastUpdate();
-  res.json({ success: true, version: data._version, lastModified: data._lastModified });
+  
+  // Return FULL merged data so client replaces with complete truth
+  res.json({ success: true, version: data._version, lastModified: data._lastModified, data });
 });
 
 // Add feeding record
