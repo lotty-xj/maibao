@@ -444,6 +444,13 @@ app.listen(PORT, '0.0.0.0', () => {
   }, 300000);
   console.log('');
   
+  // Self-ping every 12 minutes to prevent Railway free tier hibernation
+  setInterval(() => {
+    require('http').get('http://0.0.0.0:' + PORT + '/api/health-check', (res) => {
+      res.resume();
+    }).on('error', () => {});
+  }, 12 * 60 * 1000);
+  
   // Print local IP
   const os = require('os');
   const interfaces = os.networkInterfaces();
