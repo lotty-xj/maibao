@@ -656,7 +656,7 @@ async function syncPush(immediate = false) {
     const resp = await fetch(SYNC_URL + '/sync', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
-      signal: AbortSignal.timeout(5000)
+      signal: AbortSignal.timeout(15000)
     });
     if (resp.ok) {
       const result = await resp.json();
@@ -1393,20 +1393,8 @@ function showWeightHistory() {
   showModal('⚖️ 体重历史记录',html);
 }
 
-function uploadGrowthPhoto() {
-  document.getElementById('growth-photo-input').click();
-}
-function handleGrowthPhoto(event) {
-  const file = event.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    if(!DATA.growthPhotos) DATA.growthPhotos=[];
-    DATA.growthPhotos.push({date:today(),data:reader.result});
-    saveLocal(true);toast('✅ 照片已保存');renderPage('growth');
-  };
-  reader.readAsDataURL(file);
-}
+function uploadGrowthPhoto() { document.getElementById('growth-photo-input').click(); }
+// handleGrowthPhoto is now the compressed version below
 function viewPhoto(data) {
   showModal('📸 成长照片',`<img src="${data}" style="width:100%;border-radius:8px">`);
 }
@@ -1643,46 +1631,63 @@ function renderFamily() {
 }
 
 // Photo upload helpers
-function uploadMemberPhoto(name) {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'image/*';
-  input.onchange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const member = DATA.members.find(m => m.name === name);
-      if (member) {
-        member.photo = reader.result;
-        saveLocal(true);
-        toast('✅ 头像已更新');
-        renderPage('family');
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-  input.click();
-}
-
-function uploadBabyPhoto() {
-  document.getElementById('baby-photo-input').click();
-}
-
-function handleBabyPhoto(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+// Photo upload with compression
+function compressImage(file, maxSize, callback) {
   const reader = new FileReader();
-  reader.onload = () => {
-    DATA.baby.photo = reader.result;
-    saveLocal(true);
-    toast('✅ 宝宝头像已更新');
-    renderPage('family');
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      if (w > h) { if (w > maxSize) { h = h * maxSize / w; w = maxSize; } }
+      else { if (h > maxSize) { w = w * maxSize / h; h = maxSize; } }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
 
-function saveBabyInfo(){
+function uploadMemberPhoto(name) {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*';
+  input.onchange = (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    compressImage(file, 300, (compressed) => {
+      const member = DATA.members.find(m => m.name === name);
+      if (member) {
+        member.photo = compressed;
+        saveLocal(true);
+        toast('✅ 头像已更新，正在同步到其他设备...');
+        renderPage('family');
+      }
+    });
+  };
+  input.click();
+}
+
+function uploadBabyPhoto() { document.getElementById('baby-photo-input').click(); }
+
+function handleBabyPhoto(event) {
+  const file = event.target.files[0]; if (!file) return;
+  compressImage(file, 400, (compressed) => {
+    DATA.baby.photo = compressed;
+    saveLocal(true);
+    toast('✅ 宝宝头像已更新，正在同步到其他设备...');
+    renderPage('family');
+  });
+}
+
+function handleGrowthPhoto(event) {
+  const file = event.target.files[0]; if (!file) return;
+  compressImage(file, 600, (compressed) => {
+    if(!DATA.growthPhotos) DATA.growthPhotos=[];
+    DATA.growthPhotos.push({date:today(),data:compressed});
+    saveLocal(true); toast('✅ 照片已保存'); renderPage('growth');
+  });
+}
   const name=document.getElementById('bname').value.trim();
   const birth=document.getElementById('bbirth').value;
   const gender=document.getElementById('bgen').value;
