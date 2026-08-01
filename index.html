@@ -564,9 +564,9 @@ body{
       <div class="nav-item" data-page="bilingual"><span class="nav-icon">🔤</span>双语学习</div>
       <div class="nav-item" data-page="family"><span class="nav-icon">👨‍👩‍👧</span>家庭成员</div>
     </nav>
-    <div class="sync-indicator" id="sync-indicator">
+    <div class="sync-indicator" id="sync-indicator" onclick="retrySync()" style="cursor:pointer" title="点击重试同步">
       <span class="dot"></span> <span id="sync-text">已同步</span>
-      <span style="margin-left:6px;font-size:9px;color:var(--text-muted)">v8.1</span>
+      <span style="margin-left:6px;font-size:9px;color:var(--text-muted)">v8.2</span>
     </div>
     <div class="sidebar-footer">💝 用爱记录，用心陪伴</div>
   </aside>
@@ -636,17 +636,19 @@ async function syncCheck() {
 
 async function syncPull(silent = false) {
   try {
-    const resp = await fetch(SYNC_URL + '/data');
+    const resp = await fetch(SYNC_URL + '/data', { signal: AbortSignal.timeout(5000) });
     if (!resp.ok) return;
     const { data, version } = await resp.json();
-    // NEVER accept empty data if we have local data
-    const serverCount = (data.feedingRecords||[]).length + (data.growthPhotos||[]).length + (data.poopRecords||[]).length;
-    if(serverCount === 0 && version <= 3) {
-      console.log('Server is empty/wiped, keeping local data');
+    // Only accept server data if it has records OR version is significantly higher
+    const serverCount = (data.feedingRecords||[]).length + (data.growthPhotos||[]).length + (data.poopRecords||[]).length + (data.growthRecords||[]).length;
+    const local = getLocalData();
+    const localCount = (local.feedingRecords||[]).length + (local.growthPhotos||[]).length + (local.poopRecords||[]).length + (local.growthRecords||[]).length;
+    // If server is empty and we have data, push instead of pull
+    if(serverCount === 0 && localCount > 0){
+      syncPush(false);
       return;
     }
-    if (version > SYNC_VERSION) {
-      const local = getLocalData();
+    if (version > SYNC_VERSION && serverCount > 0) {
       const merged = { ...data,
         baby: { ...data.baby, currentMember: local.baby?.currentMember || '' },
         settings: { ...(data.settings||{}), ...(local.settings||{}) },
@@ -750,6 +752,28 @@ function startPolling() {
   if (POLL_INTERVAL) clearInterval(POLL_INTERVAL);
   // Poll every 3 seconds for near-real-time updates
   POLL_INTERVAL = setInterval(syncCheck, 3000);
+}
+
+// Manual retry with backoff
+let retryAttempts = 0;
+function retrySync() {
+  retryAttempts = 0;
+  trySyncWithBackoff();
+}
+function trySyncWithBackoff() {
+  retryAttempts++;
+  const delay = Math.min(retryAttempts * 2000, 10000);
+  toast('🔄 正在重试同步... (' + retryAttempts + ')', 'info');
+  testConnection().then(online => {
+    if(online){
+      syncPull(true).then(() => {
+        toast('✅ 同步成功！', 'success');
+        retryAttempts = 0;
+      });
+    } else {
+      setTimeout(trySyncWithBackoff, delay);
+    }
+  });
 }
 
 // Test connection on init
