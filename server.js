@@ -118,12 +118,18 @@ app.post('/api/sync', (req, res) => {
     clientData[key].forEach(r => { if(!existingIds.has(r.id)) data[key].push(r); });
   });
 
-  // MERGE GROWTH PHOTOS (by date+data fingerprint)
+  // MERGE GROWTH PHOTOS (by unique ID, not date+note)
   if(clientData.growthPhotos){
     if(!data.growthPhotos) data.growthPhotos=[];
-    const existingKeys = new Set(data.growthPhotos.map(p=>p.date+'|'+(p.note||'')));
+    const existingIds = new Set(data.growthPhotos.map(p=>p.id));
     clientData.growthPhotos.forEach(p => {
-      if(!existingKeys.has(p.date+'|'+(p.note||''))) data.growthPhotos.push(p);
+      if(p.id && !existingIds.has(p.id)){
+        data.growthPhotos.push(p);
+      } else if(!p.id){
+        // Old photos without ID - assign one and add if unique
+        p.id = 'photo_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);
+        data.growthPhotos.push(p);
+      }
     });
   }
   
