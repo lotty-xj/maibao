@@ -1717,9 +1717,24 @@ function saveBabyInfo(){
   saveLocal(true);updateBabyDisp();updateHeaderAge();toast('✅ 宝宝信息已保存！');
 }
 function addMember(){showModal('添加家庭成员',`<div class="form-group"><label class="form-label">称呼</label><input class="form-input" id="mn2"></div><div class="form-group"><label class="form-label">关系</label><select class="form-select" id="mr2"><option value="妈妈">妈妈</option><option value="爸爸">爸爸</option><option value="爷爷">爷爷</option><option value="奶奶">奶奶</option><option value="外公">外公</option><option value="外婆">外婆</option></select></div><div class="form-group"><label class="form-label">表情(选填)</label><input class="form-input" id="me2" placeholder="如：👩" maxlength="2"></div>`,`<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-primary btn-sm" onclick="saveMember()">保存</button>`);}
-function saveMember(){const n=document.getElementById('mn2').value;if(!n){toast('请输入称呼','error');return;}if(!DATA.members)DATA.members=[];if(DATA.members.find(m=>m.name===n)){toast('已存在','error');return;}DATA.members.push({name:n,role:document.getElementById('mr2').value,emoji:document.getElementById('me2').value||'👤'});if(!DATA.baby.currentMember)DATA.baby.currentMember=n;saveLocal();closeModal();updateSel();toast('已添加');renderPage('family');}
+function saveMember(){const n=document.getElementById('mn2').value;if(!n){toast('请输入称呼','error');return;}if(!DATA.members)DATA.members=[];if(DATA.members.find(m=>m.name===n)){toast('已存在','error');return;}DATA.members.push({name:n,role:document.getElementById('mr2').value,emoji:document.getElementById('me2').value||'👤'});if(!DATA.baby.currentMember)DATA.baby.currentMember=n;localStorage.setItem('maibao_my_name',n);saveLocal();closeModal();updateSel();toast('已添加，当前账号：'+n);renderPage('family');}
 function delMember(n){showConfirm('删除',`确认删除"${n}"？`,()=>{DATA.members=DATA.members.filter(m=>m.name!==n);if(DATA.baby.currentMember===n)DATA.baby.currentMember=DATA.members[0]?.name||'';saveLocal();updateSel();toast('已删除');renderPage('family');});}
-function switchFam(n){DATA.baby.currentMember=n;saveLocal();updateSel();toast('已切换为 '+n);renderPage('family');}
+function switchFam(n){
+  // Save to both synced data AND local device preference
+  DATA.baby.currentMember=n;
+  localStorage.setItem('maibao_my_name', n);
+  saveLocal();updateSel();toast('已切换为 '+n);renderPage('family');
+}
+function getMyName(){
+  // Each device remembers its own user independently
+  const local = localStorage.getItem('maibao_my_name');
+  if(local) return local;
+  // Fallback: use synced current member, or first member
+  if(DATA.baby.currentMember && DATA.members.find(m=>m.name===DATA.baby.currentMember))
+    return DATA.baby.currentMember;
+  if(DATA.members.length>0) return DATA.members[0].name;
+  return '';
+}
 function updateSel(){
   // Member switching is handled in the Family page
   // This function is called after member changes to sync state
@@ -1763,6 +1778,10 @@ async function init() {
   if(!DATA.members) DATA.members=[];
   if(!DATA.educationRecords) DATA.educationRecords=[];
   saveLocal(true);
+
+  // Load per-device user preference (each phone remembers its own user)
+  const myName = getMyName();
+  if(myName) DATA.baby.currentMember = myName;
 
   updateSel();updateBabyDisp();
   navigateTo('home');
