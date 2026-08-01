@@ -1419,7 +1419,7 @@ function renderGrowth() {
         </div>
         <span style="font-size:11px;color:var(--text-muted);margin-left:auto">${isToday?'共'+DATA.growthPhotos.length+'张':dayPhotos.length+'张'}</span>
       </div>
-      <div style="display:flex;gap:10px;overflow-x:auto;padding:8px 0;-webkit-overflow-scrolling:touch;scroll-behavior:smooth" id="growth-photo-row">
+      <div style="display:flex;flex-wrap:nowrap;gap:10px;overflow-x:auto;padding:8px 4px;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;scroll-snap-type:x mandatory" id="growth-photo-row">
         <div class="photo-avatar lg" style="width:80px;height:80px;flex-shrink:0;background:var(--pink-light);font-size:14px;color:var(--pink)" onclick="uploadGrowthPhoto()">
           ＋<br>拍照
         </div>
