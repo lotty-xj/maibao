@@ -1398,12 +1398,11 @@ function renderGrowth() {
   if(!DATA.growthPhotos) DATA.growthPhotos=[];
   if(!window._growthPhotoDate) window._growthPhotoDate = today();
 
-  // Photos for selected date
+  // Photos - show all by default, filter only when specific date selected
   const photoDate = window._growthPhotoDate;
   const isToday = photoDate === today();
   const d=new Date(photoDate);
-  const dateLabel = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
-  const dayPhotos = DATA.growthPhotos.filter(p=>p.date===photoDate);
+  const dayPhotos = isToday ? [...DATA.growthPhotos].reverse() : DATA.growthPhotos.filter(p=>p.date===photoDate);
 
   // Weight history for modal
   const wHistory = recs.filter(r=>r.weight).sort((a,b)=>b.date.localeCompare(a.date));
@@ -1418,7 +1417,7 @@ function renderGrowth() {
           <span style="font-size:16px;font-weight:800;color:var(--pink-dark);padding:4px 6px 4px 4px">${isToday?'📸 今天':`📸 ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`}</span>
           <input type="date" style="border:none;background:transparent;font-size:0;width:22px;height:32px;padding:0;cursor:pointer;color:transparent" value="${photoDate}" onchange="changeGrowthPhotoDate(this.value)" id="growth-date-picker">
         </div>
-        <span style="font-size:11px;color:var(--text-muted);margin-left:auto">${dayPhotos.length}张</span>
+        <span style="font-size:11px;color:var(--text-muted);margin-left:auto">${isToday?'共'+DATA.growthPhotos.length+'张':dayPhotos.length+'张'}</span>
       </div>
       <div style="display:flex;gap:10px;overflow-x:auto;padding:8px 0;-webkit-overflow-scrolling:touch;scroll-behavior:smooth" id="growth-photo-row">
         <div class="photo-avatar lg" style="width:80px;height:80px;flex-shrink:0;background:var(--pink-light);font-size:14px;color:var(--pink)" onclick="uploadGrowthPhoto()">
