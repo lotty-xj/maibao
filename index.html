@@ -1213,7 +1213,7 @@ function renderMilkTab() {
       <div class="card-header"><div class="card-title"><span class="icon">🍼</span>今日喂养</div><button class="btn btn-primary btn-sm" onclick="addMilk()">+ 记录</button></div>
       ${todayRecs.length===0?'<div class="empty-state"><div class="es-icon">🍼</div><div class="es-text">今天还没有喂养记录</div></div>':''}
       ${todayRecs.sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.04)">
-        <span style="font-size:20px">${r.type==='breastmilk'?'🤱':'🍼'}</span><div style="flex:1"><div style="font-weight:700;font-size:13px">${r.amount}ml</div><div style="font-size:11px;color:var(--text-light)">${r.date.split(' ')[1]||''} · ${r.recordedBy||'家长'}</div></div>
+        <span style="font-size:20px">${r.type==='breastmilk'?'🤱':'🍼'}</span><div style="flex:1"><div style="font-weight:700;font-size:13px">${r.amount}</div><div style="font-size:11px;color:var(--text-light)">${r.date.split(' ')[1]||''} · ${r.recordedBy||'家长'}</div></div>
         <button class="btn btn-ghost btn-xs" onclick="delFeed('${r.id}')">删除</button></div>`).join('')}
     </div>
     <div class="card card-white"><div class="card-header"><div class="card-title"><span class="icon">📜</span>历史记录</div></div>${renderFeedHistory('milk')}</div>
