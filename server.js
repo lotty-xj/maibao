@@ -105,20 +105,39 @@ app.post('/api/sync', (req, res) => {
     return res.json({ success: false, error: 'Invalid data' });
   }
   
+  // Re-read to ensure we have the absolute latest
   let data = readData();
   
-  // MERGE ALL RECORD ARRAYS: take everything from both sides (by ID, never delete)
+  // Track which record IDs we've seen, and prefer the LARGER version
+  const now = Date.now();
+  
+  // MERGE ALL RECORD ARRAYS: never delete, always prefer newer
   const recordArrays = ['feedingRecords','poopRecords','supplementRecords','growthRecords','milestones',
     'vaccineRecords','healthChecks','educationRecords'];
   
   recordArrays.forEach(key => {
     if(!data[key]) data[key]=[];
     if(!clientData[key]) return;
-    const existingIds = new Set(data[key].map(r=>r.id));
-    clientData[key].forEach(r => { if(!existingIds.has(r.id)) data[key].push(r); });
+    const serverMap = new Map(data[key].map(r=>[r.id,r]));
+    clientData[key].forEach(r => {
+      if(!r.id) r.id = key+'_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);
+      if(!serverMap.has(r.id)){
+        // New record - add it
+        if(!r.createdAt) r.createdAt = now;
+        data[key].push(r);
+      } else {
+        // Existing record - keep the one with newer createdAt if available
+        const existing = serverMap.get(r.id);
+        if(r.createdAt && existing.createdAt && r.createdAt > existing.createdAt){
+          Object.assign(existing, r);
+        }
+      }
+    });
+    // Sort by createdAt descending for consistent ordering
+    data[key].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   });
 
-  // MERGE GROWTH PHOTOS (by unique ID, not date+note)
+  // MERGE GROWTH PHOTOS (by unique ID)
   if(clientData.growthPhotos){
     if(!data.growthPhotos) data.growthPhotos=[];
     const existingIds = new Set(data.growthPhotos.map(p=>p.id));
@@ -126,14 +145,13 @@ app.post('/api/sync', (req, res) => {
       if(p.id && !existingIds.has(p.id)){
         data.growthPhotos.push(p);
       } else if(!p.id){
-        // Old photos without ID - assign one and add if unique
         p.id = 'photo_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);
         data.growthPhotos.push(p);
       }
     });
   }
   
-  // MERGE MEMBERS (by name, keep photo if available)
+  // MERGE MEMBERS  
   if(clientData.members && clientData.members.length > 0) {
     if(!data.members) data.members=[];
     if(data.members.length === 0){
@@ -142,10 +160,9 @@ app.post('/api/sync', (req, res) => {
       clientData.members.forEach(m=>{
         const existing = data.members.find(sm=>sm.name===m.name);
         if(existing){
-          // Keep whichever has more data (photo, etc)
-          existing.role = existing.role || m.role;
-          existing.photo = existing.photo || m.photo;
-          existing.emoji = existing.emoji || m.emoji;
+          existing.role = m.role || existing.role;
+          existing.photo = m.photo || existing.photo;
+          existing.emoji = m.emoji || existing.emoji;
         } else {
           data.members.push(m);
         }
@@ -153,13 +170,12 @@ app.post('/api/sync', (req, res) => {
     }
   }
   
-  // MERGE BABY/SETTINGS (keep whichever is more complete)
+  // MERGE BABY/SETTINGS
   if(clientData.baby){
-    data.baby.name = data.baby.name || clientData.baby.name;
-    data.baby.birthDate = data.baby.birthDate || clientData.baby.birthDate;
-    data.baby.birthTime = data.baby.birthTime || clientData.baby.birthTime;
-    data.baby.gender = data.baby.gender || clientData.baby.gender;
-    data.baby.photo = data.baby.photo || clientData.baby.photo;
+    if(!data.baby.birthDate && clientData.baby.birthDate) data.baby.birthDate = clientData.baby.birthDate;
+    if(!data.baby.birthTime && clientData.baby.birthTime) data.baby.birthTime = clientData.baby.birthTime;
+    if(!data.baby.gender && clientData.baby.gender) data.baby.gender = clientData.baby.gender;
+    if(!data.baby.photo && clientData.baby.photo) data.baby.photo = clientData.baby.photo;
   }
   if(clientData.settings) data.settings = { ...(data.settings||{}), ...clientData.settings };
   if(clientData.suppSettings) data.suppSettings = { ...(data.suppSettings||{}), ...clientData.suppSettings };
@@ -167,8 +183,8 @@ app.post('/api/sync', (req, res) => {
   writeData(data, true);
   broadcastUpdate();
   
-  // Return FULL merged data so client replaces with complete truth
-  res.json({ success: true, version: data._version, lastModified: data._lastModified, data });
+  // Return FULL merged data
+  res.json({ success: true, version: data._version, lastModified: data._lastModified, serverTime: now, data });
 });
 
 // Add feeding record
