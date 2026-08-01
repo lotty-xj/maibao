@@ -644,9 +644,10 @@ async function syncPull(silent = false) {
     const serverCount = (data.feedingRecords||[]).length + (data.growthPhotos||[]).length + (data.poopRecords||[]).length + (data.growthRecords||[]).length;
     const local = getLocalData();
     const localCount = (local.feedingRecords||[]).length + (local.growthPhotos||[]).length + (local.poopRecords||[]).length + (local.growthRecords||[]).length;
-    // If server is empty and we have data, push instead of pull
+    // If server is empty and we have data, RESTORE the server
     if(serverCount === 0 && localCount > 0){
-      syncPush(false);
+      console.log('Restoring server from local data ('+localCount+' records)');
+      await syncPush(true);
       return;
     }
     if (version > SYNC_VERSION && serverCount > 0) {
