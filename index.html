@@ -1357,8 +1357,8 @@ function memberSelect(id, current) {
 
 function addMilk() {
   showModal('记录喂养',`<div class="form-group"><label class="form-label">类型</label><select class="form-select" id="mt"><option value="formula">🍼 奶粉</option><option value="breastmilk">🤱 母乳</option></select></div>
-    <div class="form-group"><label class="form-label">奶量(ml) <span id="milk-val" style="color:var(--pink-dark);font-weight:800">120</span></label>
-      <input type="range" id="ma" min="5" max="300" step="5" value="120" style="width:100%;accent-color:var(--pink)" oninput="document.getElementById('milk-val').textContent=this.value"></div>
+    <div class="form-group"><label class="form-label">奶量(ml)</label>
+      <select class="form-select form-select-lg" id="ma">${Array.from({length:196},(_,i)=>i+5).map(v=>`<option value="${v}" ${v===120?'selected':''}>${v}ml</option>`).join('')}</select></div>
     <div class="form-group"><label class="form-label">时间</label><input class="form-input form-input-lg" type="datetime-local" id="mdt" value="${nowDT()}"></div>
     <div class="form-group"><label class="form-label">记录者</label>${memberSelect('mr')}</div>
     <div class="form-group"><label class="form-label">备注</label><input class="form-input" id="mn" placeholder="选填"></div>`,
