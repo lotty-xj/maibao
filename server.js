@@ -24,14 +24,18 @@ function readData() {
   return getDefaultData();
 }
 
-// Write data with debounce
-let writeTimeout = null;
+// Write data with backup
 function writeData(data, immediate = false) {
   data._lastModified = new Date().toISOString();
   data._version = (data._version || 0) + 1;
   
   const doWrite = () => {
     try {
+      // Create backup before writing
+      if(fs.existsSync(DATA_FILE)){
+        const size=fs.statSync(DATA_FILE).size;
+        if(size>100) fs.writeFileSync(DATA_FILE+'.backup', fs.readFileSync(DATA_FILE));
+      }
       fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
     } catch (e) {
       console.error('Error writing data:', e.message);
@@ -398,38 +402,29 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('🐣  麦宝的成长日记 - 服务器已启动');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-  // One-time cleanup: remove duplicate photos
+  // Safe cleanup: only run if data exists and has records
   const data = readData();
-  if(data.growthPhotos && data.growthPhotos.length>0){
-    const seen=new Set();
-    const unique=data.growthPhotos.filter(p=>{
-      if(!p.id){p.id='photo_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);}
-      if(seen.has(p.id)) return false;
-      seen.add(p.id);return true;
-    });
-    if(unique.length !== data.growthPhotos.length){
-      console.log(`  📸 清理重复照片: ${data.growthPhotos.length} → ${unique.length} (删除${data.growthPhotos.length-unique.length}张)`);
-      data.growthPhotos=unique;
-      writeData(data,true);
-    }
-  }
-  // Also remove duplicates from other arrays
-  const recordArrays=['feedingRecords','poopRecords','supplementRecords','growthRecords','milestones'];
-  recordArrays.forEach(key=>{
-    if(data[key] && data[key].length>0){
+  const totalRecords = (data.feedingRecords||[]).length + (data.growthPhotos||[]).length + (data.poopRecords||[]).length;
+  if(totalRecords > 0){
+    let cleaned = false;
+    if(data.growthPhotos && data.growthPhotos.length>0){
       const seen=new Set();
-      const unique=data[key].filter(r=>{
-        if(!r.id) return true;
-        if(seen.has(r.id)) return false;
-        seen.add(r.id);return true;
+      const unique=data.growthPhotos.filter(p=>{
+        if(!p.id){p.id='photo_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);}
+        if(seen.has(p.id)){cleaned=true;return false;}
+        seen.add(p.id);return true;
       });
-      if(unique.length !== data[key].length){
-        console.log(`  🧹 ${key}: ${data[key].length} → ${unique.length}`);
-        data[key]=unique;
-      }
+      if(cleaned){console.log(`  📸 清理照片: ${data.growthPhotos.length}→${unique.length}`);data.growthPhotos=unique;}
     }
-  });
-  writeData(data,true);
+    ['feedingRecords','poopRecords','supplementRecords'].forEach(key=>{
+      if(data[key] && data[key].length>0){
+        const seen=new Set();let dup=0;
+        const unique=data[key].filter(r=>{if(!r.id||seen.has(r.id)){dup++;return !!r.id&&!seen.has(r.id);}seen.add(r.id);return true;});
+        if(dup>0){console.log(`  🧹 ${key}: 删除${dup}条重复`);data[key]=unique;}
+      }
+    });
+    if(cleaned) writeData(data,true);
+  }
 
   console.log(`  本地访问:  http://localhost:${PORT}`);
   console.log(`  数据文件:  ${DATA_FILE}`);
