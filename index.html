@@ -1473,12 +1473,11 @@ function renderGrowth() {
   if(!DATA.growthPhotos) DATA.growthPhotos=[];
   if(!window._growthPhotoDate) window._growthPhotoDate = today();
 
-  // Photos - show photos for selected date
+  // Photos - always show only selected date's photos
   const photoDate = window._growthPhotoDate;
-  const showAll = photoDate === '__ALL__';
-  const isToday = !showAll && photoDate === today();
-  const d = showAll ? new Date() : new Date(photoDate);
-  const dayPhotos = showAll ? [...DATA.growthPhotos].reverse() : DATA.growthPhotos.filter(p=>p.date===photoDate);
+  const isToday = photoDate === today();
+  const d = new Date(photoDate);
+  const dayPhotos = DATA.growthPhotos.filter(p=>p.date===photoDate);
   const allPhotosCount = DATA.growthPhotos.length;
 
   // Weight history for modal
@@ -1491,11 +1490,11 @@ function renderGrowth() {
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
         <button class="btn btn-ghost btn-xs" onclick="changeGrowthPhotoDate(prevDay(window._growthPhotoDate||today()))" style="font-size:16px">◀</button>
         <div style="display:flex;align-items:center;background:#fff;border-radius:12px;padding:4px 8px;box-shadow:var(--shadow)">
-          <span id="growth-date-label" style="font-size:16px;font-weight:800;color:var(--pink-dark);padding:4px 6px 4px 4px">${showAll?'📸 全部照片':isToday?'📸 今天':`📸 ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`}</span>
+          <span id="growth-date-label" style="font-size:16px;font-weight:800;color:var(--pink-dark);padding:4px 6px 4px 4px">${isToday?'📸 今天':`📸 ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`}</span>
           <input type="date" style="border:none;background:transparent;font-size:0;width:22px;height:32px;padding:0;cursor:pointer;color:transparent" value="${photoDate}" onchange="changeGrowthPhotoDate(this.value)" id="growth-date-picker">
         </div>
         <button class="btn btn-ghost btn-xs" onclick="changeGrowthPhotoDate(nextDay(window._growthPhotoDate||today()))" style="font-size:16px">▶</button>
-        <span style="font-size:11px;color:var(--text-muted);margin-left:auto">${dayPhotos.length}张${allPhotosCount>dayPhotos.length?` · <span style="color:var(--pink);cursor:pointer;text-decoration:underline" onclick="window._growthPhotoDate='__ALL__';renderPage('growth')">查看全部${allPhotosCount}张</span>`:''}</span>
+        <span style="font-size:11px;color:var(--text-muted);margin-left:auto">${dayPhotos.length}张</span>
       </div>
       <div style="display:flex;flex-wrap:nowrap;gap:10px;overflow-x:auto;padding:8px 4px;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;scroll-snap-type:x mandatory" id="growth-photo-row">
         <div class="photo-avatar lg" style="width:80px;height:80px;flex-shrink:0;background:var(--pink-light);font-size:14px;color:var(--pink)" onclick="uploadGrowthPhoto()">
