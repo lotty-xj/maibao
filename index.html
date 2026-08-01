@@ -1169,13 +1169,27 @@ function markSupp(type) {
 }
 
 // ===================== FEEDING PAGE =====================
+let currentFeedingDate = today();
+
 function renderFeeding() {
-  return `<div class="tabs" id="feeding-tabs">
+  const isToday = currentFeedingDate === today();
+  return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+    <span style="font-size:14px;font-weight:800">📅 查看日期：</span>
+    <input type="date" class="form-input" style="width:auto;padding:6px 10px;font-size:13px;min-height:36px" value="${currentFeedingDate}" onchange="changeFeedingDate(this.value)" id="feeding-date-picker">
+    ${!isToday?`<button class="btn btn-outline btn-xs" onclick="changeFeedingDate('${today()}')">📍 回到今天</button>`:''}
+  </div>
+  <div class="tabs" id="feeding-tabs">
     <div class="tab active" data-sub="milk">🍼 奶量</div>
     <div class="tab" data-sub="solids">🥄 辅食</div>
     <div class="tab" data-sub="poop">💩 臭臭</div>
     <div class="tab" data-sub="supplement">💊 补剂</div>
   </div><div id="feeding-content"></div>`;
+}
+
+function changeFeedingDate(date) {
+  currentFeedingDate = date;
+  document.getElementById('feeding-date-picker').value = date;
+  renderFeedingSub(currentFeedingSub);
 }
 
 function renderFeedingContent(sub) {
@@ -1189,8 +1203,8 @@ function renderFeedingContent(sub) {
 }
 
 function renderMilkTab() {
-  const t = today();
-  const todayRecs = DATA.feedingRecords.filter(r=>(r.type==='breastmilk'||r.type==='formula')&&r.date.startsWith(t));
+  const t = currentFeedingDate;
+  const isToday = t === today();
   const total = todayRecs.reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
   const last7 = [];
   for(let i=6;i>=0;i--) {
@@ -1228,7 +1242,7 @@ function renderMilkTab() {
 }
 
 function renderSolidsTab() {
-  const t = today();
+  const t = currentFeedingDate;
   const recs = DATA.feedingRecords.filter(r=>r.type==='solids'&&r.date.startsWith(t));
   return `
     <div class="card card-orange"><div class="card-header"><div class="card-title"><span class="icon">🥄</span>今日辅食</div><button class="btn btn-orange btn-sm" onclick="addSolids()">+ 记录</button></div>
@@ -1242,7 +1256,7 @@ function renderSolidsTab() {
 }
 
 function renderPoopTab() {
-  const t = today();
+  const t = currentFeedingDate;
   const recs = DATA.poopRecords.filter(r=>r.date.startsWith(t));
   return `
     <div class="stat-blocks" style="margin-bottom:16px">
@@ -1260,8 +1274,9 @@ function renderPoopTab() {
 }
 
 function renderSupplementTab() {
-  const t = today();
-  const ts = getTodaySupplement();
+  const t = currentFeedingDate;
+  const isToday = t === today();
+  const ts = isToday ? getTodaySupplement() : null;
   const todayRecs = DATA.supplementRecords.filter(r=>r.date.startsWith(t));
   const allTypes = [...new Set(DATA.supplementRecords.map(r=>r.type))];
   let html = ts ? `<div class="supp-reminder"><div class="sr-icon">💊</div><div class="sr-text"><div class="sr-title">今日补剂：${ts.name}</div><div class="sr-detail">${ts.note}</div></div><button class="btn btn-primary btn-sm" onclick="markSupp('${ts.type}');setTimeout(()=>renderFeedingSub('supplement'),300)">标记已吃</button></div>` : '';
