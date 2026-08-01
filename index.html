@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="麦宝日记">
+<meta name="theme-color" content="#FF6B8A">
+<meta name="description" content="记录宝宝每一个成长的瞬间">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>麦宝的成长日记</title>
+<style>
+/* ========== Color Block Design System ========== */
+:root {
+  --pink: #FF6B8A; --pink-light: #FFF0F3; --pink-dark: #E55A75;
+  --orange: #FF8C42; --orange-light: #FFF3EB; --orange-dark: #E67A35;
+  --yellow: #FFD23F; --yellow-light: #FFFBE6; --yellow-dark: #E6BD2A;
+  --green: #3ECF8E; --green-light: #EDFBF5; --green-dark: #2FB878;
+  --blue: #5B9BD5; --blue-light: #EEF5FC; --blue-dark: #4A89C0;
+  --purple: #9B7ED8; --purple-light: #F5F2FC; --purple-dark: #886AC5;
+  --coral: #FF6F61; --coral-light: #FFF0EE;
+  --teal: #26C6B7; --teal-light: #E8FAF8;
+
+  --bg: #F7F4F0;
+  --bg-card: #FFFFFF;
+  --bg-sidebar: #FFFAF5;
+  --text: #2D3436;
+  --text-light: #636E72;
+  --text-muted: #B2BEC3;
+  --border: rgba(0,0,0,0.06);
+  --shadow: 0 2px 16px rgba(0,0,0,0.05);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.08);
+  --radius: 20px;
+  --radius-sm: 12px;
+  --sidebar-width: 220px;
+  --header-height: 64px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.6;overflow:hidden;height:100vh;
+}
+.app{display:flex;height:100vh}
+
+/* ========== Sidebar ========== */
+.sidebar{
+  width:var(--sidebar-width);min-width:var(--sidebar-width);
+  background:#fff;border-right:1px solid var(--border);
+  display:flex;flex-direction:column;z-index:10;
+  transition:transform 0.3s;
+}
+.sidebar-header{
+  padding:18px 16px;text-align:center;
+  background:linear-gradient(135deg, #FFF0F3 0%, #FFF3EB 50%, #FFFBE6 100%);
+  border-bottom:2px solid rgba(255,107,138,0.15);
+}
+.sidebar-header .logo{font-size:20px;font-weight:800;color:var(--pink-dark);letter-spacing:1px}
+.sidebar-header .subtitle{font-size:11px;color:var(--text-light);margin-top:2px}
+.sidebar-header .baby-info{font-size:12px;color:var(--orange);margin-top:6px;font-weight:700}
+.sidebar-nav{flex:1;overflow-y:auto;padding:6px 8px}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:11px 14px;margin:2px 0;
+  cursor:pointer;font-size:13px;color:var(--text);font-weight:600;
+  border-radius:12px;transition:all 0.2s;position:relative;
+}
+.nav-item:hover{background:var(--pink-light)}
+.nav-item.active{
+  color:#fff;
+  background:linear-gradient(135deg, var(--pink), var(--pink-dark));
+  box-shadow:0 4px 12px rgba(255,107,138,0.3);
+}
+.nav-item .nav-icon{font-size:18px;width:22px;text-align:center;flex-shrink:0}
+.nav-item .badge{
+  margin-left:auto;background:rgba(255,255,255,0.3);color:#fff;
+  font-size:10px;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center;
+}
+.nav-item:not(.active) .badge{background:var(--pink);color:#fff}
+.sidebar-footer{
+  padding:12px 16px;border-top:1px solid var(--border);
+  font-size:11px;color:var(--text-muted);text-align:center;
+}
+.sync-indicator{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:8px;font-size:11px;color:var(--green-dark);font-weight:600;
+}
+.sync-indicator .dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.sync-indicator.offline{color:var(--text-muted)}
+.sync-indicator.offline .dot{background:var(--text-muted)}
+
+/* ========== Main Content ========== */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.main-header{
+  height:var(--header-height);min-height:var(--header-height);
+  background:#fff;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 24px;gap:16px;
+}
+.main-header .page-title{font-size:18px;font-weight:800;color:var(--text)}
+.main-header .family-switch{margin-left:auto;display:flex;align-items:center;gap:8px}
+.main-header .family-switch select{
+  border:2px solid var(--border);border-radius:10px;padding:7px 14px;
+  font-size:13px;color:var(--text);background:#fff;cursor:pointer;font-family:inherit;
+  font-weight:600;
+}
+.main-header .current-date{
+  font-size:12px;color:var(--text-light);background:var(--yellow-light);
+  padding:4px 12px;border-radius:20px;font-weight:600;
+}
+.main-content{flex:1;overflow-y:auto;padding:20px 24px}
+.main-content::-webkit-scrollbar{width:6px}
+.main-content::-webkit-scrollbar-thumb{background:var(--pink-light);border-radius:3px}
+
+/* ========== Section ========== */
+.section{display:none}
+.section.active{display:block}
+
+/* ========== Color Cards ========== */
+.card{
+  border-radius:var(--radius);padding:20px;margin-bottom:16px;
+  box-shadow:var(--shadow);transition:all 0.3s;
+}
+.card-white{background:#fff}
+.card-pink{background:linear-gradient(135deg, #FFF0F3 0%, #FFE8EC 100%);border:1px solid rgba(255,107,138,0.15)}
+.card-orange{background:linear-gradient(135deg, #FFF3EB 0%, #FFEBE0 100%);border:1px solid rgba(255,140,66,0.15)}
+.card-yellow{background:linear-gradient(135deg, #FFFBE6 0%, #FFF8D6 100%);border:1px solid rgba(255,210,63,0.2)}
+.card-green{background:linear-gradient(135deg, #EDFBF5 0%, #E0F7EE 100%);border:1px solid rgba(62,207,142,0.15)}
+.card-blue{background:linear-gradient(135deg, #EEF5FC 0%, #E3EEF9 100%);border:1px solid rgba(91,155,213,0.15)}
+.card-purple{background:linear-gradient(135deg, #F5F2FC 0%, #EDE7F9 100%);border:1px solid rgba(155,126,216,0.15)}
+.card:hover{box-shadow:var(--shadow-lg)}
+
+.card-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid rgba(0,0,0,0.05);
+}
+.card-title{font-size:15px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px}
+.card-title .icon{font-size:20px}
+
+/* ========== Stat Blocks ========== */
+.stat-blocks{display:flex;gap:12px;flex-wrap:wrap}
+.stat-block{
+  flex:1;min-width:120px;border-radius:var(--radius-sm);padding:18px 16px;
+  text-align:center;color:#fff;cursor:pointer;transition:all 0.2s;
+  box-shadow:0 4px 16px rgba(0,0,0,0.08);
+}
+.stat-block:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.12)}
+.stat-block .sb-value{font-size:32px;font-weight:800;line-height:1}
+.stat-block .sb-label{font-size:12px;opacity:0.9;margin-top:6px;font-weight:600}
+.stat-block.pink{background:linear-gradient(135deg, #FF6B8A, #FF8FA3)}
+.stat-block.orange{background:linear-gradient(135deg, #FF8C42, #FFA868)}
+.stat-block.yellow{background:linear-gradient(135deg, #FFC107, #FFD54F);color:#7A5D00}
+.stat-block.green{background:linear-gradient(135deg, #3ECF8E, #5DDAA0)}
+.stat-block.blue{background:linear-gradient(135deg, #5B9BD5, #7DB5E3)}
+.stat-block.purple{background:linear-gradient(135deg, #9B7ED8, #B39EE6)}
+.stat-block.coral{background:linear-gradient(135deg, #FF6F61, #FF8E82)}
+.stat-block.teal{background:linear-gradient(135deg, #26C6B7, #4DD4C7)}
+
+/* ========== Grid ========== */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:768px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+/* ========== Buttons ========== */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;padding:9px 18px;
+  border:none;border-radius:10px;font-size:13px;font-weight:700;
+  cursor:pointer;transition:all 0.2s;font-family:inherit;white-space:nowrap;
+}
+.btn-primary{background:var(--pink);color:#fff;box-shadow:0 4px 12px rgba(255,107,138,0.25)}
+.btn-primary:hover{background:var(--pink-dark);transform:translateY(-1px)}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:8px}
+.btn-xs{padding:4px 9px;font-size:11px;border-radius:6px}
+.btn-outline{background:#fff;color:var(--pink);border:2px solid var(--pink);font-weight:600}
+.btn-outline:hover{background:var(--pink-light)}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{background:var(--green-dark)}
+.btn-orange{background:var(--orange);color:#fff}
+.btn-ghost{background:transparent;color:var(--text-light)}
+.btn-ghost:hover{background:rgba(0,0,0,0.04)}
+
+/* ========== Activity Feed ========== */
+.activity-feed{
+  max-height:200px;overflow-y:auto;padding-right:8px;
+}
+.activity-feed::-webkit-scrollbar{width:4px}
+.activity-feed::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.1);border-radius:2px}
+.activity-item{
+  display:flex;align-items:center;gap:10px;padding:8px 0;
+  border-bottom:1px solid rgba(0,0,0,0.04);font-size:12px;
+}
+.activity-item:last-child{border-bottom:none}
+.activity-item .ai-user{
+  padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap;
+}
+.activity-item .ai-detail{flex:1;color:var(--text);min-width:0}
+.activity-item .ai-time{color:var(--text-muted);font-size:11px;white-space:nowrap}
+.ai-pink{background:var(--pink-light);color:var(--pink-dark)}
+.ai-orange{background:var(--orange-light);color:var(--orange-dark)}
+.ai-blue{background:var(--blue-light);color:var(--blue-dark)}
+.ai-green{background:var(--green-light);color:var(--green-dark)}
+.ai-purple{background:var(--purple-light);color:var(--purple-dark)}
+
+/* ========== Knowledge Cards ========== */
+.knowledge-block{
+  background:linear-gradient(135deg, #FFF0F3 0%, #FFF3EB 50%, #FFFBE6 100%);
+  border-radius:var(--radius);padding:24px;margin-bottom:12px;
+  border:2px solid rgba(255,107,138,0.15);position:relative;overflow:hidden;
+}
+.knowledge-block::before{
+  content:'';position:absolute;top:-30px;right:-30px;
+  width:80px;height:80px;border-radius:50%;
+  background:rgba(255,107,138,0.06);
+}
+.knowledge-block h3{font-size:16px;font-weight:800;color:var(--pink-dark);margin-bottom:10px}
+.knowledge-block p{font-size:14px;color:var(--text);line-height:1.8;position:relative;z-index:1}
+.knowledge-block .source{font-size:11px;color:var(--text-muted);margin-top:8px}
+.myth-block{
+  background:linear-gradient(135deg, #FFF3EB, #FFF5E6);
+  border:2px solid rgba(255,140,66,0.12);border-radius:var(--radius-sm);
+  padding:14px 16px;margin-bottom:8px;
+}
+.myth-block .wrong{font-size:12px;color:var(--orange);text-decoration:line-through;margin-bottom:4px}
+.myth-block .right{font-size:13px;color:var(--text);font-weight:700}
+
+/* ========== Supplement Reminder ========== */
+.supp-reminder{
+  display:flex;align-items:center;gap:14px;padding:16px 20px;
+  background:linear-gradient(135deg, #F5F2FC 0%, #EDE4FA 100%);
+  border:2px solid rgba(155,126,216,0.2);border-radius:var(--radius);
+  margin-bottom:16px;
+}
+.supp-reminder .sr-icon{font-size:32px}
+.supp-reminder .sr-text{flex:1}
+.supp-reminder .sr-title{font-size:15px;font-weight:800;color:var(--purple-dark)}
+.supp-reminder .sr-detail{font-size:12px;color:var(--text-light)}
+
+/* ========== Tabs ========== */
+.tabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
+.tab{
+  padding:9px 18px;cursor:pointer;font-size:13px;font-weight:700;
+  border-radius:10px;background:#fff;color:var(--text-light);
+  border:2px solid transparent;transition:all 0.2s;
+}
+.tab:hover{background:var(--pink-light);color:var(--pink-dark)}
+.tab.active{background:var(--pink);color:#fff;border-color:var(--pink);box-shadow:0 4px 12px rgba(255,107,138,0.2)}
+
+/* ========== Timeline ========== */
+.tl-item{display:flex;gap:14px;padding:14px 0;position:relative}
+.tl-item::before{
+  content:'';position:absolute;left:16px;top:38px;bottom:0;
+  width:2px;background:rgba(0,0,0,0.06);
+}
+.tl-item:last-child::before{display:none}
+.tl-dot{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:15px;z-index:1;font-weight:700;
+}
+.tl-dot.done{background:var(--green);color:#fff}
+.tl-dot.pending{background:#fff;color:var(--text-muted);border:2px solid var(--border)}
+.tl-dot.current{background:var(--pink);color:#fff;box-shadow:0 4px 12px rgba(255,107,138,0.3)}
+.tl-content{flex:1}
+.tl-title{font-size:14px;font-weight:700}
+.tl-date{font-size:11px;color:var(--text-light)}
+.tl-desc{font-size:12px;color:var(--text-light);margin-top:2px}
+
+/* ========== Check-in Grid ========== */
+.checkin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.checkin-box{
+  border-radius:var(--radius-sm);padding:16px 12px;text-align:center;
+  cursor:pointer;transition:all 0.25s;border:2px dashed rgba(0,0,0,0.08);
+  background:#fff;
+}
+.checkin-box:hover{transform:translateY(-2px);border-color:var(--pink);box-shadow:0 4px 16px rgba(255,107,138,0.1)}
+.checkin-box.done{
+  background:var(--green-light);border-color:var(--green);border-style:solid;
+}
+.checkin-box .cb-icon{font-size:28px;margin-bottom:6px}
+.checkin-box .cb-name{font-size:13px;font-weight:700}
+.checkin-box .cb-desc{font-size:11px;color:var(--text-light);margin-top:3px}
+.checkin-box .cb-check{font-size:11px;color:var(--green);margin-top:4px;font-weight:700}
+
+/* ========== Video Card ========== */
+.video-block{
+  border-radius:var(--radius);overflow:hidden;
+  box-shadow:var(--shadow);background:#fff;margin-bottom:12px;
+}
+.video-block .vb-header{
+  padding:14px 18px;display:flex;align-items:center;gap:12px;
+  background:linear-gradient(135deg, #FFF0F3, #FFE8EC);
+}
+.video-block .vb-header.en{background:linear-gradient(135deg, #EEF5FC, #E3EEF9)}
+.video-block .vb-header .vb-icon{font-size:26px}
+.video-block .vb-header .vb-info{flex:1}
+.video-block .vb-header .vb-title{font-size:14px;font-weight:800}
+.video-block .vb-header .vb-desc{font-size:11px;color:var(--text-light)}
+.video-block .vb-wrapper{position:relative;width:100%;padding-top:56.25%}
+.video-block .vb-wrapper iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none}
+.video-block .vb-footer{padding:8px 18px;font-size:11px;color:var(--text-muted)}
+
+.daily-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:768px){.daily-grid{grid-template-columns:1fr}}
+
+/* ========== Daily Phrase ========== */
+.phrase-block{
+  background:linear-gradient(135deg, #EEF5FC 0%, #E8F0FA 100%);
+  border:2px solid rgba(91,155,213,0.2);border-radius:var(--radius);
+  padding:20px;margin-bottom:12px;text-align:center;
+}
+.phrase-block .pb-label{font-size:11px;color:var(--blue);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px}
+.phrase-block .pb-eng{font-size:24px;font-weight:800;color:var(--text);margin-bottom:4px}
+.phrase-block .pb-cn{font-size:14px;color:var(--text-light)}
+.phrase-block .pb-ctx{font-size:11px;color:var(--text-muted);margin-top:6px}
+.phrase-block .pb-actions{margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+
+/* ========== Speaker Button ========== */
+.speak-btn{
+  display:inline-flex;align-items:center;gap:5px;padding:7px 15px;
+  border:2px solid var(--blue);border-radius:20px;background:#fff;
+  color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;
+  transition:all 0.2s;font-family:inherit;
+}
+.speak-btn:hover{background:var(--blue-light)}
+.speak-btn.active{background:var(--blue);color:#fff;animation:pulse 0.6s infinite}
+
+/* ========== Lyrics ========== */
+.lyrics-box{
+  background:#fff;border-radius:var(--radius-sm);padding:14px;
+  max-height:240px;overflow-y:auto;margin-top:10px;
+}
+.lyrics-box .lyric-line{padding:7px 0;font-size:13px;border-bottom:1px dashed rgba(0,0,0,0.06);display:flex;gap:10px}
+.lyrics-box .lyric-line:last-child{border:none}
+.lyrics-box .l-cn{flex:1;font-weight:600;color:var(--text)}
+.lyrics-box .l-en{flex:1;color:var(--text-light);font-style:italic}
+
+/* ========== Audio Player ========== */
+.audio-bar{
+  background:linear-gradient(135deg, #FFFBE6, #FFF5D0);
+  border:2px solid rgba(255,210,63,0.2);border-radius:var(--radius-sm);
+  padding:14px;margin-bottom:10px;
+}
+.audio-bar .ab-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.audio-bar .ab-icon{font-size:28px}
+.audio-bar .ab-title{font-size:14px;font-weight:800}
+.audio-bar .ab-desc{font-size:11px;color:var(--text-light)}
+.audio-bar .ab-controls{display:flex;align-items:center;gap:8px}
+.audio-bar .ab-play{
+  width:42px;height:42px;border-radius:50%;border:none;cursor:pointer;
+  background:var(--orange);color:#fff;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.2s;
+}
+.audio-bar .ab-play:hover{transform:scale(1.05);background:var(--orange-dark)}
+
+/* ========== Progress Bar ========== */
+.progress-wrap{height:10px;background:rgba(0,0,0,0.06);border-radius:5px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;border-radius:5px;transition:width 0.4s ease}
+.progress-fill.pink{background:var(--pink)}
+.progress-fill.green{background:var(--green)}
+.progress-fill.orange{background:var(--orange)}
+
+/* ========== Modal ========== */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;
+  align-items:center;justify-content:center;
+}
+.modal-overlay.show{display:flex}
+.modal{
+  background:#fff;border-radius:var(--radius);width:90%;max-width:480px;
+  max-height:85vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,0.2);
+}
+.modal-header{
+  padding:16px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;background:#fff;z-index:1;
+}
+.modal-header h3{font-size:16px;font-weight:800}
+.modal-body{padding:18px 20px}
+.modal-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.modal-close{
+  width:34px;height:34px;border-radius:50%;border:none;background:var(--pink-light);
+  cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;
+}
+.modal-close:hover{background:var(--pink);color:#fff}
+
+/* ========== Forms ========== */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;color:var(--text)}
+.form-input,.form-select,.form-textarea{
+  width:100%;padding:10px 14px;border:2px solid var(--border);
+  border-radius:10px;font-size:14px;font-family:inherit;color:var(--text);
+  background:#fff;transition:border-color 0.2s;
+}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--pink)}
+.form-textarea{resize:vertical;min-height:60px}
+.form-hint{font-size:11px;color:var(--text-muted);margin-top:4px}
+
+/* ========== Tags ========== */
+.tag{
+  display:inline-block;padding:3px 9px;border-radius:8px;font-size:11px;font-weight:700;
+}
+.tag-pink{background:var(--pink-light);color:var(--pink-dark)}
+.tag-orange{background:var(--orange-light);color:var(--orange-dark)}
+.tag-blue{background:var(--blue-light);color:var(--blue-dark)}
+.tag-green{background:var(--green-light);color:var(--green-dark)}
+.tag-purple{background:var(--purple-light);color:var(--purple-dark)}
+.tag-gray{background:rgba(0,0,0,0.04);color:var(--text-light)}
+
+/* ========== Date Badge ========== */
+.date-badge{
+  display:inline-flex;align-items:center;gap:4px;padding:4px 10px;
+  background:var(--yellow);border-radius:20px;font-size:11px;
+  color:#7A5D00;font-weight:700;
+}
+
+/* ========== Empty State ========== */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-muted)}
+.empty-state .es-icon{font-size:48px;margin-bottom:12px}
+.empty-state .es-text{font-size:14px}
+
+/* ========== Toast ========== */
+.toast-container{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:8px}
+.toast{
+  padding:12px 18px;border-radius:10px;color:#fff;font-size:13px;font-weight:700;
+  box-shadow:0 4px 16px rgba(0,0,0,0.2);animation:slideIn 0.3s ease;max-width:320px;
+}
+.toast-success{background:var(--green)}
+.toast-error{background:var(--coral)}
+.toast-info{background:var(--blue)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ========== Confirm ========== */
+.confirm-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:150;
+  align-items:center;justify-content:center;
+}
+.confirm-overlay.show{display:flex}
+.confirm-box{
+  background:#fff;border-radius:var(--radius);width:90%;max-width:360px;
+  padding:24px;text-align:center;
+}
+.confirm-box h3{margin-bottom:8px}
+.confirm-box p{font-size:13px;color:var(--text-light);margin-bottom:16px}
+
+/* ========== Animations ========== */
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.anim-fade{animation:fadeIn 0.35s ease}
+
+/* ========== Responsive ========== */
+@media(max-width:768px){
+  .sidebar{position:fixed;left:-260px;top:0;bottom:0;width:260px;min-width:260px;z-index:50}
+  .sidebar.open{transform:translateX(260px)}
+  .main-content{padding:12px}
+  .main-header{padding:0 12px}
+  .stat-blocks{flex-direction:column}
+  .stat-block{min-width:100%}
+  .checkin-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+}
+@media(min-width:769px){.mobile-btn{display:none!important}}
+
+.mobile-btn{
+  background:none;border:none;font-size:22px;cursor:pointer;color:var(--text);padding:4px;
+}
+
+/* Family avatars row */
+.family-row{display:flex;gap:6px;flex-wrap:wrap}
+.family-chip{
+  padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;
+  color:#fff;cursor:pointer;transition:all 0.2s;
+}
+.family-chip:hover{transform:scale(1.05)}
+
+/* Chart SVG container */
+.chart-wrap{overflow-x:auto;margin-top:10px}
+.chart-wrap svg{max-width:100%;height:auto}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">🐣 麦宝的成长日记</div>
+      <div class="subtitle">记录每一个成长的瞬间</div>
+      <div class="baby-info" id="sidebar-baby-info">--</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-page="home"><span class="nav-icon">🏠</span>首页</div>
+      <div class="nav-item" data-page="feeding"><span class="nav-icon">🍼</span>喂养记录<span class="badge" id="feeding-badge" style="display:none">0</span></div>
+      <div class="nav-item" data-page="growth"><span class="nav-icon">📏</span>成长记录</div>
+      <div class="nav-item" data-page="vaccine"><span class="nav-icon">💉</span>疫苗接种</div>
+      <div class="nav-item" data-page="education"><span class="nav-icon">🎨</span>早教中心<span class="badge" id="edu-badge" style="display:none">0</span></div>
+      <div class="nav-item" data-page="bilingual"><span class="nav-icon">🔤</span>双语学习</div>
+      <div class="nav-item" data-page="family"><span class="nav-icon">👨‍👩‍👧</span>家庭成员</div>
+    </nav>
+    <div class="sync-indicator" id="sync-indicator">
+      <span class="dot"></span> <span id="sync-text">已同步</span>
+    </div>
+    <div class="sidebar-footer">💝 用爱记录，用心陪伴</div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <header class="main-header">
+      <button class="mobile-btn" onclick="toggleSidebar()">☰</button>
+      <h1 class="page-title" id="page-title">首页</h1>
+      <span class="current-date" id="current-date"></span>
+      <div class="family-switch">
+        <span style="font-size:12px;color:var(--text-light)">当前：</span>
+        <select id="current-member" onchange="switchMember()"></select>
+      </div>
+    </header>
+    <div class="main-content" id="main-content"></div>
+  </main>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay"><div class="modal" id="modal"></div></div>
+
+<!-- Confirm -->
+<div class="confirm-overlay" id="confirm-overlay"><div class="confirm-box" id="confirm-box"></div></div>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ===================== SYNC ENGINE =====================
+const SYNC_URL = window.location.origin + '/api';
+let SYNC_ENABLED = true;
+let SYNC_VERSION = 0;
+let SYNC_TIMER = null;
+let POLL_INTERVAL = null;
+let lastSyncFromServer = null; // track last sync for notification
+
+async function syncCheck() {
+  if (!SYNC_ENABLED) return;
+  try {
+    const resp = await fetch(SYNC_URL + '/version', { signal: AbortSignal.timeout(3000) });
+    if (!resp.ok) throw new Error('Server error');
+    const { version } = await resp.json();
+    if (version > SYNC_VERSION) {
+      await syncPull(true);
+    }
+    updateSyncUI(true);
+  } catch (e) {
+    updateSyncUI(false);
+  }
+}
+
+async function syncPull(silent = false) {
+  try {
+    const resp = await fetch(SYNC_URL + '/data');
+    if (!resp.ok) return;
+    const { data, version } = await resp.json();
+    if (version > SYNC_VERSION) {
+      // Merge server data (server is source of truth for shared state)
+      const local = getLocalData();
+      const merged = { ...data,
+        baby: { ...local.baby, ...data.baby },
+        settings: { ...local.settings, ...data.settings }
+      };
+      localStorage.setItem('maibao_data', JSON.stringify(merged));
+      SYNC_VERSION = version;
+      refreshLocalData();
+
+      // CRITICAL FIX: Re-render the page so user sees the new data
+      if (!silent) {
+        renderPage(currentPage);
+        updateSel();
+        updateBabyDisp();
+      } else {
+        // Silent update: refresh data, gentle re-render after delay
+        setTimeout(() => {
+          if (document.hidden) return; // skip if tab in background
+          renderPage(currentPage);
+        }, 300);
+      }
+
+      // Show notification only if data came from someone else recently
+      const now = Date.now();
+      if (lastSyncFromServer && (now - lastSyncFromServer) > 3000) {
+        lastSyncFromServer = now;
+      }
+    }
+  } catch (e) { /* silently fail */ }
+}
+
+async function syncPush(immediate = false) {
+  if (!SYNC_ENABLED) return;
+  const data = getLocalData();
+  data._version = SYNC_VERSION;
+  try {
+    const resp = await fetch(SYNC_URL + '/sync', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+      signal: AbortSignal.timeout(5000)
+    });
+    if (resp.ok) {
+      const result = await resp.json();
+      SYNC_VERSION = result.version;
+      updateSyncUI(true);
+    }
+  } catch (e) {
+    updateSyncUI(false);
+  }
+}
+
+function syncAfterChange() {
+  clearTimeout(SYNC_TIMER);
+  // Push immediately (100ms debounce instead of 500ms for faster sync)
+  SYNC_TIMER = setTimeout(() => syncPush(true), 100);
+}
+
+function updateSyncUI(online) {
+  const el = document.getElementById('sync-indicator');
+  const txt = document.getElementById('sync-text');
+  if (online) {
+    el.className = 'sync-indicator';
+    txt.textContent = '已同步';
+  } else {
+    el.className = 'sync-indicator offline';
+    txt.textContent = '离线';
+  }
+}
+
+// SSE for real-time updates
+let sseSource = null;
+function setupSSE() {
+  try {
+    if (sseSource) sseSource.close();
+    sseSource = new EventSource(SYNC_URL + '/stream');
+    sseSource.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'update' && msg.version > SYNC_VERSION) {
+          // Real-time update from another family member - re-render immediately
+          syncPull(false);
+        }
+      } catch (e) {}
+    };
+    sseSource.onerror = () => {
+      // SSE failed, fall back to fast polling
+      sseSource.close();
+      sseSource = null;
+      startPolling();
+    };
+  } catch (e) {
+    startPolling();
+  }
+}
+
+function startPolling() {
+  if (POLL_INTERVAL) clearInterval(POLL_INTERVAL);
+  // Poll every 3 seconds for near-real-time updates
+  POLL_INTERVAL = setInterval(syncCheck, 3000);
+}
+
+// Test connection on init
+async function testConnection() {
+  try {
+    const resp = await fetch(SYNC_URL + '/health-check', { signal: AbortSignal.timeout(2000) });
+    if (resp.ok) {
+      SYNC_ENABLED = true;
+      return true;
+    }
+  } catch (e) {}
+  SYNC_ENABLED = false;
+  updateSyncUI(false);
+  return false;
+}
+
+// ===================== DATA LAYER =====================
+function getLocalData() {
+  try { return JSON.parse(localStorage.getItem('maibao_data')) || getDefaultData(); }
+  catch { return getDefaultData(); }
+}
+
+function getDefaultData() {
+  return {
+    _version: 0,
+    baby: { name: '麦宝', birthDate: '', gender: '', weight: '', height: '', currentMember: '' },
+    members: [],
+    feedingRecords: [], supplementRecords: [], poopRecords: [],
+    growthRecords: [], milestones: [],
+    vaccineRecords: [], healthChecks: [],
+    educationRecords: [],
+    settings: { supplementAlternate: true }
+  };
+}
+
+let DATA = getLocalData();
+function refreshLocalData() { DATA = getLocalData(); }
+function saveLocal(immediate) {
+  localStorage.setItem('maibao_data', JSON.stringify(DATA));
+  syncAfterChange();
+}
+
+// ===================== KNOWLEDGE BASE =====================
+const DAILY_KNOWLEDGE = [
+  { month:[0,1], text:'新生儿每天需要睡16-20小时，这是大脑发育的关键期。宝宝饿了就会醒来吃奶，按需喂养最重要，不必严格卡时间。', source:'《美国儿科学会育儿百科》' },
+  { month:[0,1], text:'新生儿的视力范围只有20-30厘米，正好是喂奶时看到妈妈脸的距离。多用黑白卡刺激视觉发育，但每次不超过3分钟。', source:'儿科医生建议' },
+  { month:[0,1], text:'脐带一般在出生后1-3周自然脱落，期间保持干燥清洁，用75%酒精棉签由内向外消毒，不要强行撕扯。', source:'《西尔斯亲密育儿百科》' },
+  { month:[0,1], text:'初乳被称为"液体黄金"，虽然量少但营养密集。产后尽早让宝宝吸吮，能刺激泌乳，帮助子宫恢复。', source:'世界卫生组织建议' },
+  { month:[1,2], text:'满月后的宝宝开始出现社交性微笑，这是真正有意识的笑容。多和宝宝对视、说话，回应他的笑容，能促进情感发育。', source:'发展心理学研究' },
+  { month:[1,2], text:'这个阶段可以开始给宝宝做被动操，轻柔活动四肢，每次5-10分钟。有助于促进大运动发展，缓解肠胀气。', source:'儿科康复指导' },
+  { month:[2,3], text:'肠绞痛高发期在2-3个月，飞机抱、顺时针腹部按摩、白噪音都能帮助缓解。这不是病，一般4个月左右自然好转。', source:'儿科临床指南' },
+  { month:[2,3], text:'宝宝的睡眠开始出现昼夜节律，白天保持光线明亮，晚上保持安静昏暗，帮助建立规律作息。', source:'睡眠医学建议' },
+  { month:[3,4], text:'3个月的宝宝开始有意识的抓握，会伸手去够玩具。给他准备安全、易抓握的摇铃和牙胶，锻炼精细动作。', source:'精细运动发育' },
+  { month:[4,5], text:'4个月开始，宝宝的精细动作快速发展，会把玩具从一只手换到另一只手。给他提供不同形状、材质的玩具。', source:'精细运动发展' },
+  { month:[5,6], text:'5-6个月是添加辅食的关键窗口期。第一口辅食推荐高铁米粉，从稀到稠，每次只添加一种新食物观察过敏反应。', source:'中国营养学会' },
+  { month:[6,7], text:'6个月后母体带来的铁储备逐渐耗尽，辅食要注意补铁：猪肝泥、瘦肉泥、高铁米粉。缺铁会影响智力发育。', source:'微量营养素指南' },
+  { month:[7,8], text:'宝宝开始匍匐爬行或肚子贴地移动，确保地面安全，清除小物件。爬行对大脑双侧协调发育至关重要。', source:'运动发育研究' },
+  { month:[8,9], text:'分离焦虑在这个阶段达到高峰，宝宝看到妈妈离开会哭。这是正常的情感发育，通过躲猫猫游戏帮助宝宝理解"物体恒存"。', source:'依恋理论研究' },
+  { month:[9,12], text:'9-12个月是语言理解爆发期，宝宝能听懂简单指令。多说、多指认物体，创造丰富的语言环境。', source:'语言发育指南' },
+];
+
+const MYTHS = [
+  { wrong:'宝宝腿不直要绑腿', right:'绑腿会影响髋关节发育，增加发育性髋关节脱位风险。婴儿O型腿是正常的生理现象，会自然变直。' },
+  { wrong:'枕秃就是缺钙', right:'枕秃大多数是因为宝宝躺着转头摩擦导致的，与缺钙无关。只要奶量充足，一般不需要额外补钙。' },
+  { wrong:'宝宝怕冷要多穿', right:'婴儿代谢旺盛，比成人更怕热。判断冷热摸后颈，温热无汗最合适。' },
+  { wrong:'摇晃哄睡很正常', right:'剧烈摇晃可能导致"摇晃婴儿综合征"，造成脑损伤。轻轻摇晃在安全范围内，但要避免头部剧烈晃动。' },
+  { wrong:'母乳6个月后没营养', right:'母乳的营养成分会随宝宝需求动态变化，6个月后仍然富含抗体和营养，只是需要配合辅食。' },
+  { wrong:'学步车能帮宝宝早走路', right:'学步车反而会延迟走路时间，影响平衡能力发育，还存在安全隐患。加拿大已禁止销售学步车。' },
+];
+
+const WHO_WEIGHT_BOYS = {
+  0:[2.5,3.3,4.4],1:[3.4,4.5,5.8],2:[4.3,5.6,7.1],3:[5.0,6.4,8.0],4:[5.6,7.0,8.7],5:[6.0,7.5,9.3],6:[6.4,7.9,9.8],
+  7:[6.7,8.3,10.3],8:[7.0,8.6,10.7],9:[7.2,8.9,11.0],10:[7.5,9.2,11.4],11:[7.7,9.4,11.7],12:[7.9,9.6,12.0],
+  15:[8.8,10.6,13.2],18:[9.6,11.4,14.2],21:[10.3,12.2,15.2],24:[11.0,13.1,16.3]
+};
+const WHO_WEIGHT_GIRLS = {
+  0:[2.4,3.2,4.2],1:[3.2,4.2,5.5],2:[4.0,5.1,6.6],3:[4.6,5.8,7.5],4:[5.1,6.4,8.1],5:[5.5,6.9,8.7],6:[5.9,7.3,9.2],
+  7:[6.2,7.6,9.6],8:[6.5,8.0,10.1],9:[6.7,8.2,10.4],10:[6.9,8.4,10.7],11:[7.1,8.7,11.0],12:[7.3,8.9,11.3],
+  15:[8.1,9.8,12.4],18:[8.9,10.7,13.5],21:[9.6,11.5,14.5],24:[10.3,12.3,15.5]
+};
+const WHO_HEIGHT_BOYS = {
+  0:[46.1,49.9,53.7],1:[50.8,54.7,58.6],2:[54.4,58.4,62.4],3:[57.3,61.4,65.5],4:[59.7,63.9,68.0],5:[61.7,65.9,70.1],6:[63.3,67.6,71.9],
+  7:[64.8,69.2,73.5],8:[66.2,70.6,75.0],9:[67.5,72.0,76.5],10:[68.7,73.3,77.9],11:[69.9,74.5,79.2],12:[71.0,75.7,80.5],
+  15:[74.0,78.9,84.0],18:[76.6,81.7,87.0],21:[78.9,84.1,89.6],24:[81.0,86.4,92.1]
+};
+const WHO_HEIGHT_GIRLS = {
+  0:[45.4,49.1,53.0],1:[49.8,53.7,57.6],2:[53.0,57.1,61.1],3:[55.6,59.8,64.0],4:[57.8,62.1,66.4],5:[59.6,64.0,68.5],6:[61.2,65.7,70.3],
+  7:[62.7,67.3,72.0],8:[64.0,68.7,73.5],9:[65.3,70.1,75.0],10:[66.5,71.5,76.4],11:[67.7,72.8,77.8],12:[68.9,74.0,79.2],
+  15:[72.0,77.3,82.8],18:[74.8,80.2,85.9],21:[77.2,82.8,88.7],24:[79.5,85.3,91.4]
+};
+
+const VACCINE_SCHEDULE = [
+  {age:'出生',name:'卡介苗(BCG)',dose:'第1剂',notes:'预防结核病，接种后4-6周局部红肿化脓属正常反应'},
+  {age:'出生',name:'乙肝疫苗(HepB)',dose:'第1剂',notes:'出生24小时内接种，预防乙型肝炎'},
+  {age:'1月龄',name:'乙肝疫苗(HepB)',dose:'第2剂',notes:'与第1剂间隔至少28天'},
+  {age:'2月龄',name:'脊灰灭活疫苗(IPV)',dose:'第1剂',notes:'预防脊髓灰质炎'},
+  {age:'2月龄',name:'百白破疫苗(DTaP)',dose:'第1剂',notes:'预防百日咳、白喉、破伤风'},
+  {age:'3月龄',name:'脊灰灭活疫苗(IPV)',dose:'第2剂'},
+  {age:'3月龄',name:'百白破疫苗(DTaP)',dose:'第2剂'},
+  {age:'4月龄',name:'脊灰减毒活疫苗(bOPV)',dose:'第3剂',notes:'口服，服苗前后30分钟禁食禁水'},
+  {age:'4月龄',name:'百白破疫苗(DTaP)',dose:'第3剂'},
+  {age:'6月龄',name:'乙肝疫苗(HepB)',dose:'第3剂',notes:'完成基础免疫'},
+  {age:'6月龄',name:'A群流脑疫苗',dose:'第1剂'},
+  {age:'8月龄',name:'麻腮风疫苗(MMR)',dose:'第1剂',notes:'接种后可能6-12天出现一过性皮疹或发热'},
+  {age:'8月龄',name:'乙脑减毒活疫苗(JE-L)',dose:'第1剂'},
+  {age:'9月龄',name:'A群流脑疫苗',dose:'第2剂'},
+  {age:'18月龄',name:'百白破疫苗(DTaP)',dose:'第4剂'},
+  {age:'18月龄',name:'麻腮风疫苗(MMR)',dose:'第2剂'},
+  {age:'18月龄',name:'甲肝减毒活疫苗(HepA-L)',dose:'第1剂'},
+  {age:'2岁',name:'乙脑减毒活疫苗(JE-L)',dose:'第2剂'},
+  {age:'3岁',name:'A+C群流脑疫苗',dose:'第1剂'},
+  {age:'4岁',name:'脊灰减毒活疫苗(bOPV)',dose:'第4剂'},
+  {age:'6岁',name:'白破疫苗(DT)',dose:'第1剂'},
+  {age:'6岁',name:'A+C群流脑疫苗',dose:'第2剂'},
+];
+
+const EARLY_EDUCATION = [
+  {month:[0,1],cat:'大运动',name:'俯卧抬头练习',desc:'每天2-3次，每次1-2分钟',icon:'👶'},
+  {month:[0,1],cat:'感官',name:'黑白卡追视',desc:'距离20-30cm，每次2-3分钟',icon:'👁️'},
+  {month:[0,1],cat:'听觉',name:'听听妈妈的声音',desc:'多跟宝宝说话唱歌',icon:'👂'},
+  {month:[0,1],cat:'触觉',name:'抚触按摩',desc:'全身抚触促进发育',icon:'🤲'},
+  {month:[1,2],cat:'大运动',name:'被动操',desc:'轻柔活动四肢，每次5-10分钟',icon:'🦵'},
+  {month:[1,2],cat:'听觉',name:'摇铃追声',desc:'用摇铃在耳侧轻摇',icon:'🔔'},
+  {month:[1,2],cat:'视觉',name:'彩色卡片',desc:'引入彩色图案卡片',icon:'🎨'},
+  {month:[1,2],cat:'社交',name:'微笑互动',desc:'对宝宝微笑，模仿表情',icon:'😊'},
+  {month:[2,3],cat:'大运动',name:'俯卧抬头45°',desc:'俯卧时能抬头45°',icon:'👶'},
+  {month:[2,3],cat:'精细',name:'抓握练习',desc:'练习抓握和摇晃摇铃',icon:'✊'},
+  {month:[2,3],cat:'语言',name:'咿呀对话',desc:'模仿宝宝发出的声音',icon:'💬'},
+  {month:[2,3],cat:'认知',name:'照镜子',desc:'发展自我认知',icon:'🪞'},
+  {month:[3,4],cat:'大运动',name:'侧翻练习',desc:'辅助从仰卧翻到侧卧',icon:'🔄'},
+  {month:[3,4],cat:'精细',name:'双手互握',desc:'引导双手胸前互握',icon:'🤝'},
+  {month:[3,4],cat:'认知',name:'布书阅读',desc:'培养早期阅读兴趣',icon:'📖'},
+  {month:[3,4],cat:'感官',name:'不同材质触感',desc:'提供不同材质的安全物品',icon:'🧶'},
+  {month:[4,6],cat:'大运动',name:'翻身练习',desc:'鼓励仰卧翻身到俯卧',icon:'🔄'},
+  {month:[4,6],cat:'精细',name:'够取玩具',desc:'鼓励伸手够取玩具',icon:'🎯'},
+  {month:[4,6],cat:'语言',name:'叫名字反应',desc:'不同方向叫宝宝名字',icon:'📢'},
+  {month:[4,6],cat:'社交',name:'躲猫猫',desc:'帮助理解物体恒存',icon:'🙈'},
+];
+
+const BILINGUAL_PLANS = [
+  {month:[0,3],title:'英语语音输入期',activities:[
+    '每天播放5-10分钟英文儿歌（推荐Super Simple Songs）',
+    '给宝宝换尿布、洗澡时用简单的英文描述动作',
+    '指认身体部位时中英文都说（眼睛eyes、鼻子nose）',
+  ],parentResource:'推荐资源：Super Simple Songs、Cocomelon、Pinkfong'},
+  {month:[3,6],title:'英语语感培养期',activities:[
+    '每天固定时间播放英文儿歌，配合动作',
+    '读英文纸板书，指图说英文单词',
+    '用简单英文问好和道别（Good morning, Good night）',
+  ],parentResource:'推荐资源：Brown Bear系列、Dear Zoo'},
+  {month:[6,9],title:'英语词汇萌芽期',activities:[
+    '玩"这是什么"游戏，指认常见物品',
+    '每天读1-2本英文绘本，坚持亲子共读',
+    '儿歌中加入手指游戏',
+    '吃饭时说食物英文名',
+  ],parentResource:'推荐资源：The Very Hungry Caterpillar、Goodnight Moon'},
+  {month:[9,12],title:'英语理解萌芽期',activities:[
+    '给出简单的英文指令（Clap your hands）',
+    '看英文绘本时提问（Where\'s the dog?）',
+    '建立每日英文时间习惯',
+    '动物叫声游戏',
+  ],parentResource:'推荐资源：Peppa Pig英文版、Maisy系列'},
+  {month:[12,18],title:'英语词汇爆发期',activities:[
+    '每周引入3-5个新英文词汇',
+    '读绘本时让宝宝指认图片',
+    '颜色、形状、数字的英文启蒙',
+  ],parentResource:'推荐资源：First 100 Words、Dr. Seuss'},
+  {month:[18,24],title:'英语短句期',activities:[
+    '日常对话中使用短句',
+    '角色扮演游戏用英文',
+    '情绪表达的英文',
+  ],parentResource:'推荐资源：Oxford Reading Tree、Pete the Cat'},
+];
+
+// Video & Audio Content Pools
+const EDU_VIDEOS = [
+  {month:[0,3],bvid:'BV1ZJ4m1u7pB',title:'新生儿抚触操教学',desc:'专业护士演示全套抚触手法',icon:'🤲',tags:['抚触']},
+  {month:[0,3],bvid:'BV1YN4y1u7Y2',title:'新生儿被动操完整版',desc:'一步一步教学，缓解肠胀气',icon:'👶',tags:['被动操']},
+  {month:[0,2],bvid:'BV1qN4y1c7cB',title:'黑白卡追视训练教程',desc:'0-3个月视觉刺激正确方法',icon:'👁️',tags:['视觉']},
+  {month:[0,6],bvid:'BV1Bp4y1B7Lk',title:'0-1岁宝宝早教儿歌合集',desc:'精选50首适合小月龄儿歌',icon:'🎵',tags:['儿歌']},
+  {month:[3,8],bvid:'BV1Hh4y1Y7Sp',title:'宝宝手指谣大全',desc:'配合手指动作的儿歌',icon:'✋',tags:['手指谣']},
+  {month:[3,8],bvid:'BV1kF411f7En',title:'3-8个月早教游戏集锦',desc:'适合小月龄亲子互动游戏',icon:'🎮',tags:['游戏']},
+  {month:[0,12],bvid:'BV1CM4y1s7jP',title:'0-1岁亲子游戏大全',desc:'各个月龄适合的亲子游戏',icon:'🎯',tags:['亲子']},
+  {month:[0,4],bvid:'BV1Hv4y1E7fJ',title:'宝宝俯卧抬头训练',desc:'趴着玩的正确姿势',icon:'👶',tags:['大运动']},
+  {month:[3,12],bvid:'BV1vk4y1S7fR',title:'0-1岁绘本阅读方法',desc:'如何给小月龄宝宝读绘本',icon:'📖',tags:['绘本']},
+];
+
+const NURSERY_RHYMES = [
+  {month:[0,12],title:'小星星',lyrics:[['一闪一闪亮晶晶','Twinkle twinkle little star'],['满天都是小星星','How I wonder what you are'],['挂在天上放光明','Up above the world so high'],['好像许多小眼睛','Like a diamond in the sky']],icon:'⭐'},
+  {month:[0,12],title:'两只老虎',lyrics:[['两只老虎两只老虎','Two tigers two tigers'],['跑得快跑得快','Running fast running fast'],['一只没有耳朵','One has no ears'],['一只没有尾巴','One has no tail'],['真奇怪真奇怪','How strange how strange']],icon:'🐯'},
+  {month:[3,12],title:'小兔子乖乖',lyrics:[['小兔子乖乖把门开开','Little rabbit open the door'],['快点儿开开我要进来','Open quickly I want to come in'],['不开不开我不开','No no no I won\'t open'],['妈妈没回来谁来也不开','Mama\'s not back']],icon:'🐰'},
+  {month:[0,12],title:'摇篮曲',lyrics:[['睡吧睡吧我亲爱的宝贝','Sleep sleep my dear baby'],['妈妈的双手轻轻摇着你','Mama\'s hands gently rock you'],['摇篮摇你快快安睡','The cradle rocks you to sleep'],['安睡在摇篮里温暖又安逸','Sleep warm and peaceful']],icon:'🌙'},
+  {month:[0,12],title:'小燕子',lyrics:[['小燕子穿花衣','Little swallow in colorful clothes'],['年年春天来这里','Comes here every spring'],['我问燕子你为啥来','I ask you why you come'],['燕子说这里的春天最美丽','Spring here is most beautiful']],icon:'🐦'},
+  {month:[3,12],title:'数鸭子',lyrics:[['门前大桥下游过一群鸭','Under the bridge swims a flock of ducks'],['快来快来数一数','Come quickly and count them'],['二四六七八','Two four six seven eight'],['嘎嘎嘎嘎真呀真多呀','Quack quack so many ducks']],icon:'🦆'},
+  {month:[0,12],title:'找朋友',lyrics:[['找呀找呀找朋友','Find a friend find a friend'],['找到一个好朋友','Found a good friend'],['敬个礼呀握握手','Salute and shake hands'],['你是我的好朋友','You are my good friend']],icon:'🤝'},
+];
+
+const ENGLISH_SONGS = [
+  {month:[0,6],videoId:'XqZsoesa55w',title:'Baby Shark',desc:'全球最火儿童歌曲，重复句型帮助记忆',icon:'🦈'},
+  {month:[0,6],videoId:'fZ8_fnha2fI',title:'Head Shoulders Knees & Toes',desc:'身体部位认知经典歌曲',icon:'👤'},
+  {month:[3,9],videoId:'N4Fq4O92h5s',title:'The Wheels on the Bus',desc:'交通工具主题，拟声词丰富',icon:'🚌'},
+  {month:[3,9],videoId:'yCjJyiqpAuU',title:'If You\'re Happy and You Know It',desc:'情绪表达经典儿歌',icon:'😊'},
+  {month:[6,12],videoId:'8y3WwDp7whM',title:'ABC Song',desc:'字母启蒙歌曲',icon:'🔤'},
+  {month:[6,12],videoId:'ouoQxPjpKnE',title:'Five Little Ducks',desc:'数字启蒙+家庭情感',icon:'🦆'},
+  {month:[0,12],videoId:'fpJ3VPAdG6I',title:'Row Row Row Your Boat',desc:'轻柔划船歌，适合睡前',icon:'🚣'},
+];
+
+const ENGLISH_DIALOGUES = [
+  {phrase:'Good morning, sweetie!',cn:'早上好，宝贝！',context:'早晨起床时',tips:'每天第一句英语问候'},
+  {phrase:'Time to eat! Yummy milk!',cn:'吃饭时间到！好喝的奶！',context:'喂奶时',tips:'用夸张的语气和表情'},
+  {phrase:'Let\'s change your diaper.',cn:'我们来换尿布吧。',context:'换尿布时',tips:'边说边做动作'},
+  {phrase:'Where\'s your nose? There it is!',cn:'你的鼻子在哪里？在这儿！',context:'互动游戏',tips:'指认身体部位'},
+  {phrase:'Peek-a-boo! I see you!',cn:'躲猫猫！我看到你了！',context:'游戏时间',tips:'理解物体恒存'},
+  {phrase:'Good night, sleep tight.',cn:'晚安，睡个好觉。',context:'睡前',tips:'建立睡眠仪式'},
+  {phrase:'Give Mommy a hug!',cn:'给妈妈一个拥抱！',context:'亲子互动',tips:'动作指令+爱的表达'},
+  {phrase:'I love you, my baby.',cn:'我爱你，我的宝贝。',context:'任何时候',tips:'最温暖的英语启蒙'},
+  {phrase:'High five! Good job!',cn:'击个掌！做得好！',context:'鼓励时',tips:'正向激励用英文'},
+  {phrase:'Wow! You did it!',cn:'哇！你做到了！',context:'宝宝完成动作时',tips:'夸张赞美'},
+  {phrase:'Clap your hands! Hooray!',cn:'拍拍手！太棒了！',context:'互动游戏',tips:'动作指令配合欢呼'},
+  {phrase:'Yummy yummy, so good!',cn:'好吃好吃，真好吃！',context:'吃辅食时',tips:'味觉词汇+正面评价'},
+];
+
+const ENGLISH_STORY_VIDEOS = [
+  {month:[0,12],videoId:'wrXHMtBHPPY',title:'The Very Hungry Caterpillar',desc:'经典绘本，学习食物数字',icon:'🐛'},
+  {month:[0,12],videoId:'bOGK4J_PNpg',title:'Brown Bear What Do You See?',desc:'颜色和动物认知绘本',icon:'🐻'},
+  {month:[3,18],videoId:'HtHCpNrZ4MQ',title:'Dear Zoo',desc:'翻翻书经典，动物学习',icon:'🦁'},
+  {month:[6,24],videoId:'9iXiOp4ACn4',title:'Goodnight Moon',desc:'睡前温暖绘本',icon:'🌙'},
+  {month:[0,12],videoId:'qFkCH1KSEPA',title:'Guess How Much I Love You',desc:'爱的表达经典绘本',icon:'💕'},
+];
+
+const CHILD_HEALTH_SCHEDULE = [
+  {age:'出生',name:'新生儿访视',desc:'社区医生上门，检查黄疸、脐带'},
+  {age:'满月',name:'满月体检',desc:'生长发育评估，髋关节B超'},
+  {age:'3月龄',name:'3月体检',desc:'生长发育评估'},
+  {age:'6月龄',name:'6月体检',desc:'血常规筛查贫血'},
+  {age:'9月龄',name:'9月体检',desc:'智能发育筛查（DDST）'},
+  {age:'12月龄',name:'1岁体检',desc:'全面体检，视力筛查'},
+  {age:'18月龄',name:'1岁半体检',desc:'语言发育筛查'},
+  {age:'24月龄',name:'2岁体检',desc:'全面体检，孤独症筛查'},
+  {age:'36月龄',name:'3岁体检',desc:'入园体检，视力听力筛查'},
+];
+
+// ===================== UTILITIES =====================
+function formatDate(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function now() {
+  const d=new Date();
+  return formatDate(d)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
+}
+function today() { return formatDate(new Date()); }
+function getAgeMonths(birthDate) {
+  if(!birthDate) return 0;
+  const b=new Date(birthDate);const n=new Date();
+  return (n.getFullYear()-b.getFullYear())*12+(n.getMonth()-b.getMonth());
+}
+function getMonthLabel(m) { return m<12?m+'个月':Math.floor(m/12)+'岁'+(m%12>0?m%12+'个月':''); }
+function getDailySeed(str) { let h=0;const s=str+today();for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}return Math.abs(h); }
+function seededPick(arr,seed) { return arr[Math.floor((Math.sin(seed)*10000-Math.floor(Math.sin(seed)*10000))*arr.length)]; }
+function toast(msg,type='success') {
+  const c=document.getElementById('toast-container');
+  const el=document.createElement('div');el.className='toast toast-'+type;el.textContent=msg;c.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity 0.3s';setTimeout(()=>el.remove(),300)},2500);
+}
+function showModal(title,body,footer) {
+  document.getElementById('modal').innerHTML=`
+    <div class="modal-header"><h3>${title}</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">${body}</div>
+    ${footer?'<div class="modal-footer">'+footer+'</div>':''}`;
+  document.getElementById('modal-overlay').classList.add('show');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('show'); }
+function showConfirm(title,msg,fn) {
+  document.getElementById('confirm-box').innerHTML=`
+    <h3>${title}</h3><p>${msg}</p>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button class="btn btn-outline btn-sm" onclick="closeConfirm()">取消</button>
+      <button class="btn btn-primary btn-sm" id="cfm-btn">确认</button></div>`;
+  document.getElementById('confirm-overlay').classList.add('show');
+  document.getElementById('cfm-btn').onclick=()=>{closeConfirm();fn();};
+}
+function closeConfirm() { document.getElementById('confirm-overlay').classList.remove('show'); }
+
+// ===================== APP STATE =====================
+let currentPage = 'home';
+
+function navigateTo(page) {
+  currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
+  const titles={home:'首页',feeding:'喂养记录',growth:'成长记录',vaccine:'疫苗接种',education:'早教中心',bilingual:'双语学习',family:'家庭成员'};
+  document.getElementById('page-title').textContent = titles[page]||'';
+  renderPage(page);
+}
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+function renderPage(page) {
+  const c = document.getElementById('main-content');
+  switch(page) {
+    case 'home': c.innerHTML = renderHome(); break;
+    case 'feeding': c.innerHTML = renderFeeding(); break;
+    case 'growth': c.innerHTML = renderGrowth(); break;
+    case 'vaccine': c.innerHTML = renderVaccine(); break;
+    case 'education': c.innerHTML = renderEducation(); break;
+    case 'bilingual': c.innerHTML = renderBilingual(); break;
+    case 'family': c.innerHTML = renderFamily(); break;
+  }
+  attachPageEvents(page);
+}
+
+function attachPageEvents(page) {
+  if(page==='feeding'){
+    document.querySelectorAll('#feeding-tabs .tab').forEach(tab=>{
+      tab.onclick=()=>renderFeedingSub(tab.dataset.sub);
+    });
+    renderFeedingSub('milk');
+  }
+}
+
+// ===================== HOME PAGE =====================
+function renderHome() {
+  const ageMonths = getAgeMonths(DATA.baby.birthDate);
+  const seed = getDailySeed('knowledge');
+  const ageK = DAILY_KNOWLEDGE.filter(k=>k.month[0]<=ageMonths&&k.month[1]>=ageMonths);
+  const k = seededPick(ageK.length>0?ageK:DAILY_KNOWLEDGE, seed);
+  const t = today();
+  const todayFeeds = DATA.feedingRecords.filter(r=>r.date.startsWith(t));
+  const totalMilk = todayFeeds.filter(r=>r.type==='breastmilk'||r.type==='formula').reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
+  const todayPoops = DATA.poopRecords.filter(r=>r.date.startsWith(t));
+  const solidsCount = todayFeeds.filter(r=>r.type==='solids').length;
+  const ts = getTodaySupplement();
+  const pendingV = DATA.vaccineRecords.filter(r=>!r.completed).slice(0,3);
+  const todayEdu = DATA.educationRecords ? DATA.educationRecords.filter(r=>!r.done && r.date===t).slice(0,4) : [];
+
+  return `
+    <div class="grid-2">
+      <div>
+        <div class="knowledge-block anim-fade">
+          <h3>📚 每日新知 · ${ageMonths>=0?getMonthLabel(ageMonths):''}</h3>
+          <p>${k.text}</p>
+          <div class="source">—— ${k.source}</div>
+        </div>
+        <div class="card card-orange">
+          <div class="card-header"><div class="card-title"><span class="icon">⚠️</span>传统育儿误区</div></div>
+          ${MYTHS.slice(0,4).map(m=>`<div class="myth-block"><div class="wrong">❌ ${m.wrong}</div><div class="right">✅ ${m.right}</div></div>`).join('')}
+        </div>
+      </div>
+      <div>
+        <div class="card card-white" style="margin-bottom:16px">
+          <div class="card-header"><div class="card-title"><span class="icon">📋</span>今日总览 · <span class="date-badge">${t}</span></div></div>
+          <div class="stat-blocks" style="margin-bottom:16px">
+            <div class="stat-block pink" onclick="navigateTo('feeding')"><div class="sb-value">${totalMilk>0?totalMilk+'ml':'--'}</div><div class="sb-label">🍼 今日奶量</div></div>
+            <div class="stat-block orange" onclick="navigateTo('feeding')"><div class="sb-value">${todayPoops.length||'--'}</div><div class="sb-label">💩 今日臭臭</div></div>
+            <div class="stat-block blue"><div class="sb-value">${solidsCount||'--'}</div><div class="sb-label">🥄 辅食次数</div></div>
+          </div>
+          ${ts?`<div class="supp-reminder"><div class="sr-icon">💊</div><div class="sr-text"><div class="sr-title">今日补剂：${ts.name}</div><div class="sr-detail">${ts.note}</div></div><button class="btn btn-primary btn-sm" onclick="markSupp('${ts.type}')">标记已吃</button></div>`:''}
+        </div>
+
+        ${pendingV.length>0?`<div class="card card-blue" style="margin-bottom:16px"><div class="card-header"><div class="card-title"><span class="icon">💉</span>近期疫苗</div></div>
+          ${pendingV.map(v=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0"><span style="font-size:18px">💉</span><div style="flex:1"><div style="font-size:13px;font-weight:700">${v.name} · ${v.dose}</div><div style="font-size:11px;color:var(--text-light)">建议：${v.age}</div></div><button class="btn btn-outline btn-xs" onclick="navigateTo('vaccine')">查看</button></div>`).join('')}</div>`:''}
+
+        ${todayEdu.length>0?`<div class="card card-green"><div class="card-header"><div class="card-title"><span class="icon">🎯</span>今日早教</div></div>
+          ${todayEdu.map(e=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0"><span style="font-size:18px">${e.icon||'🎯'}</span><div style="flex:1"><div style="font-size:13px;font-weight:700">${e.name}</div><div style="font-size:11px;color:var(--text-light)">${e.desc}</div></div><button class="btn btn-green btn-xs" onclick="checkInEdu('${e.id}')">打卡</button></div>`).join('')}</div>`:''}
+      </div>
+    </div>
+  `;
+}
+
+function getTodaySupplement() {
+  const t = today();
+  const takenToday = DATA.supplementRecords.filter(r=>r.date.startsWith(t));
+  const takenTypes = takenToday.map(r=>r.type);
+  const adD3 = DATA.supplementRecords.filter(r=>r.type==='AD'||r.type==='D3').sort((a,b)=>a.date.localeCompare(b.date));
+  let todayShould = 'AD';
+  if(adD3.length>0) todayShould = adD3[adD3.length-1].type==='AD'?'D3':'AD';
+  if(takenTypes.includes(todayShould)) return null;
+  const name = todayShould==='AD'?'维生素AD':'维生素D3';
+  const note = todayShould==='AD'?'今天该吃AD，明天换D3' : '今天该吃D3，明天换AD';
+  return {type:todayShould,name,note};
+}
+
+function markSupp(type) {
+  DATA.supplementRecords.push({id:'sup_'+Date.now(),type,date:now(),recordedBy:DATA.baby.currentMember||'家长',amount:'1粒'});
+  saveLocal();toast('已记录');renderPage('home');
+}
+
+// ===================== FEEDING PAGE =====================
+function renderFeeding() {
+  return `<div class="tabs" id="feeding-tabs">
+    <div class="tab active" data-sub="milk">🍼 奶量</div>
+    <div class="tab" data-sub="solids">🥄 辅食</div>
+    <div class="tab" data-sub="poop">💩 臭臭</div>
+    <div class="tab" data-sub="supplement">💊 补剂</div>
+  </div><div id="feeding-content"></div>`;
+}
+
+function renderFeedingContent(sub) {
+  switch(sub) {
+    case 'milk': return renderMilkTab();
+    case 'solids': return renderSolidsTab();
+    case 'poop': return renderPoopTab();
+    case 'supplement': return renderSupplementTab();
+    default: return renderMilkTab();
+  }
+}
+
+function renderMilkTab() {
+  const t = today();
+  const todayRecs = DATA.feedingRecords.filter(r=>(r.type==='breastmilk'||r.type==='formula')&&r.date.startsWith(t));
+  const total = todayRecs.reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
+  const last7 = [];
+  for(let i=6;i>=0;i--) {
+    const d=new Date();d.setDate(d.getDate()-i);const ds=formatDate(d);
+    const dr = DATA.feedingRecords.filter(r=>(r.type==='breastmilk'||r.type==='formula')&&r.date.startsWith(ds));
+    last7.push({label:d.getMonth()+1+'/'+d.getDate(),total:dr.reduce((s,r)=>s+(parseFloat(r.amount)||0),0),count:dr.length});
+  }
+  const maxM = Math.max(...last7.map(d=>d.total),1);
+
+  return `
+    <div class="stat-blocks" style="margin-bottom:16px">
+      <div class="stat-block pink"><div class="sb-value">${total}ml</div><div class="sb-label">🍼 今日奶量</div></div>
+      <div class="stat-block orange"><div class="sb-value">${todayRecs.length}次</div><div class="sb-label">喂养次数</div></div>
+      <div class="stat-block blue"><div class="sb-value">${todayRecs.length>0?Math.round(total/todayRecs.length):0}ml</div><div class="sb-label">平均每顿</div></div>
+    </div>
+    <div class="card card-white">
+      <div class="card-header"><div class="card-title"><span class="icon">📊</span>近7天奶量</div></div>
+      <div style="display:flex;align-items:flex-end;gap:6px;height:100px;padding:8px 0">
+        ${last7.map(d=>`<div style="flex:1;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%">
+          <div style="font-size:10px;color:var(--text-light);margin-bottom:2px">${d.total>0?d.total+'ml':'-'}</div>
+          <div style="width:100%;max-width:38px;height:${d.total>0?Math.max(d.total/maxM*100,4):2}%;background:${d.total>0?'var(--pink)':'var(--border)'};border-radius:6px 6px 0 0"></div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:4px">${d.label}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+    <div class="card card-pink">
+      <div class="card-header"><div class="card-title"><span class="icon">🍼</span>今日喂养</div><button class="btn btn-primary btn-sm" onclick="addMilk()">+ 记录</button></div>
+      ${todayRecs.length===0?'<div class="empty-state"><div class="es-icon">🍼</div><div class="es-text">今天还没有喂养记录</div></div>':''}
+      ${todayRecs.sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.04)">
+        <span style="font-size:20px">${r.type==='breastmilk'?'🤱':'🍼'}</span><div style="flex:1"><div style="font-weight:700;font-size:13px">${r.amount}ml</div><div style="font-size:11px;color:var(--text-light)">${r.date.split(' ')[1]||''} · ${r.recordedBy||'家长'}</div></div>
+        <button class="btn btn-ghost btn-xs" onclick="delFeed('${r.id}')">删除</button></div>`).join('')}
+    </div>
+    <div class="card card-white"><div class="card-header"><div class="card-title"><span class="icon">📜</span>历史记录</div></div>${renderFeedHistory('milk')}</div>
+  `;
+}
+
+function renderSolidsTab() {
+  const t = today();
+  const recs = DATA.feedingRecords.filter(r=>r.type==='solids'&&r.date.startsWith(t));
+  return `
+    <div class="card card-orange"><div class="card-header"><div class="card-title"><span class="icon">🥄</span>今日辅食</div><button class="btn btn-orange btn-sm" onclick="addSolids()">+ 记录</button></div>
+      ${recs.length===0?'<div class="empty-state"><div class="es-icon">🥄</div><div class="es-text">今天还没有辅食记录</div></div>':''}
+      ${recs.sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.04)">
+        <span style="font-size:20px">🥄</span><div style="flex:1"><div style="font-weight:700;font-size:13px">${r.food||'辅食'} · ${r.amount||'-'}</div><div style="font-size:11px;color:var(--text-light)">${r.date.split(' ')[1]||''} · ${r.recordedBy||'家长'}</div></div>
+        <button class="btn btn-ghost btn-xs" onclick="delFeed('${r.id}')">删除</button></div>`).join('')}
+    </div>
+    <div class="card card-white"><div class="card-header"><div class="card-title"><span class="icon">📜</span>历史辅食</div></div>${renderFeedHistory('solids')}</div>
+  `;
+}
+
+function renderPoopTab() {
+  const t = today();
+  const recs = DATA.poopRecords.filter(r=>r.date.startsWith(t));
+  return `
+    <div class="stat-blocks" style="margin-bottom:16px">
+      <div class="stat-block orange"><div class="sb-value">${recs.length}次</div><div class="sb-label">💩 今日臭臭</div></div>
+      <div class="stat-block green"><div class="sb-value">${recs.filter(r=>r.quality==='正常').length}</div><div class="sb-label">✅ 正常</div></div>
+      <div class="stat-block coral"><div class="sb-value">${recs.filter(r=>r.quality!=='正常').length}</div><div class="sb-label">⚠️ 关注</div></div>
+    </div>
+    <div class="card card-orange"><div class="card-header"><div class="card-title"><span class="icon">💩</span>今日臭臭</div><button class="btn btn-orange btn-sm" onclick="addPoop()">+ 记录</button></div>
+      ${recs.length===0?'<div class="empty-state"><div class="es-icon">💩</div><div class="es-text">今天还没有臭臭记录</div></div>':''}
+      ${recs.sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.04)">
+        <span style="font-size:20px">💩</span><div style="flex:1"><div style="font-weight:700;font-size:13px">${r.quality} · ${r.color}${r.texture?' · '+r.texture:''}</div><div style="font-size:11px;color:var(--text-light)">${r.date.split(' ')[1]||''} · ${r.recordedBy||'家长'}</div></div>
+        <button class="btn btn-ghost btn-xs" onclick="delPoop('${r.id}')">删除</button></div>`).join('')}
+    </div>
+  `;
+}
+
+function renderSupplementTab() {
+  const t = today();
+  const ts = getTodaySupplement();
+  const todayRecs = DATA.supplementRecords.filter(r=>r.date.startsWith(t));
+  const allTypes = [...new Set(DATA.supplementRecords.map(r=>r.type))];
+  let html = ts ? `<div class="supp-reminder"><div class="sr-icon">💊</div><div class="sr-text"><div class="sr-title">今日补剂：${ts.name}</div><div class="sr-detail">${ts.note}</div></div><button class="btn btn-primary btn-sm" onclick="markSupp('${ts.type}');setTimeout(()=>renderFeedingSub('supplement'),300)">标记已吃</button></div>` : '';
+  html += `<div class="card card-purple"><div class="card-header"><div class="card-title"><span class="icon">💊</span>补剂管理</div><button class="btn btn-primary btn-sm" onclick="addSuppForm()">+ 添加</button></div>
+    ${allTypes.length===0?'<div class="empty-state"><div class="es-icon">💊</div><div class="es-text">还没有添加补剂</div></div>':''}
+    ${allTypes.map(tp=>{const recs=DATA.supplementRecords.filter(r=>r.type===tp);const taken=todayRecs.some(r=>r.type===tp);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.04)">
+        <span style="font-size:20px">💊</span><div style="flex:1"><div style="font-weight:700;font-size:13px">${tp}</div><div style="font-size:11px;color:var(--text-light)">最近：${recs.length>0?recs[recs.length-1].date.split(' ')[0]:'--'} · ${taken?'<span style="color:var(--green)">✅ 已吃</span>':'未吃'}</div></div>
+        ${!taken?`<button class="btn btn-green btn-xs" onclick="markSupp('${tp}');setTimeout(()=>renderFeedingSub('supplement'),300)">标记</button>`:`<span class="tag tag-green">✅</span>`}
+        <button class="btn btn-ghost btn-xs" onclick="delSuppType('${tp}')">删除</button></div>`}).join('')}
+  </div>`;
+  return html;
+}
+
+function renderFeedHistory(type) {
+  const recs = DATA.feedingRecords.filter(r=>{if(type==='milk')return r.type==='breastmilk'||r.type==='formula';return r.type===type;}).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,15);
+  if(recs.length===0) return '<div class="empty-state"><div class="es-text">暂无记录</div></div>';
+  const grps={};recs.forEach(r=>{const d=r.date.split(' ')[0];if(!grps[d])grps[d]=[];grps[d].push(r);});
+  return Object.entries(grps).map(([d,rs])=>`<div style="margin-bottom:8px"><div style="font-size:12px;font-weight:700;color:var(--text-light);margin-bottom:4px">📅 ${d}</div>
+    ${rs.map(r=>`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12px"><span>${r.amount||r.food||'-'}</span><span style="color:var(--text-light)">${r.recordedBy||''}</span></div>`).join('')}</div>`).join('');
+}
+
+function addMilk() {
+  const m = DATA.baby.currentMember||'家长';
+  showModal('记录喂养',`<div class="form-group"><label class="form-label">类型</label><select class="form-select" id="mt"><option value="breastmilk">🤱 母乳</option><option value="formula">🍼 配方奶</option></select></div>
+    <div class="form-group"><label class="form-label">奶量(ml)</label><input class="form-input" type="number" id="ma" value="120" step="10"></div>
+    <div class="form-group"><label class="form-label">时间</label><input class="form-input" type="datetime-local" id="mdt" value="${now().substring(0,16)}"></div>
+    <div class="form-group"><label class="form-label">记录者</label><input class="form-input" id="mr" value="${m}"></div>
+    <div class="form-group"><label class="form-label">备注</label><input class="form-input" id="mn" placeholder="选填"></div>`,
+    `<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-primary btn-sm" onclick="saveMilk()">保存</button>`);
+}
+function saveMilk() {
+  DATA.feedingRecords.push({id:'feed_'+Date.now(),type:document.getElementById('mt').value,amount:document.getElementById('ma').value+'ml',date:document.getElementById('mdt').value.replace('T',' ')+':00',recordedBy:document.getElementById('mr').value||'家长',notes:document.getElementById('mn').value});
+  saveLocal();closeModal();toast('已保存');renderFeedingSub('milk');
+}
+function addSolids() {
+  const m = DATA.baby.currentMember||'家长';
+  showModal('记录辅食',`<div class="form-group"><label class="form-label">食物</label><input class="form-input" id="sf" placeholder="如：高铁米粉"></div>
+    <div class="form-group"><label class="form-label">分量</label><input class="form-input" id="sa" placeholder="如：2勺"></div>
+    <div class="form-group"><label class="form-label">时间</label><input class="form-input" type="datetime-local" id="sdt" value="${now().substring(0,16)}"></div>
+    <div class="form-group"><label class="form-label">记录者</label><input class="form-input" id="sr" value="${m}"></div>`,
+    `<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-orange btn-sm" onclick="saveSolids()">保存</button>`);
+}
+function saveSolids() {
+  DATA.feedingRecords.push({id:'feed_'+Date.now(),type:'solids',food:document.getElementById('sf').value,amount:document.getElementById('sa').value,date:document.getElementById('sdt').value.replace('T',' ')+':00',recordedBy:document.getElementById('sr').value||'家长'});
+  saveLocal();closeModal();toast('已保存');renderFeedingSub('solids');
+}
+function addPoop() {
+  const m = DATA.baby.currentMember||'家长';
+  showModal('记录臭臭',`<div class="form-group"><label class="form-label">性状</label><select class="form-select" id="pq"><option value="正常">✅ 正常</option><option value="偏稀">💧 偏稀</option><option value="水样">🌊 水样</option><option value="偏干">🪨 偏干</option></select></div>
+    <div class="form-group"><label class="form-label">颜色</label><select class="form-select" id="pc"><option value="黄色">🟡 黄色</option><option value="金黄色">🟠 金黄色</option><option value="绿色">🟢 绿色</option><option value="棕色">🟤 棕色</option></select></div>
+    <div class="form-group"><label class="form-label">质地</label><input class="form-input" id="pt" placeholder="如：糊状"></div>
+    <div class="form-group"><label class="form-label">时间</label><input class="form-input" type="datetime-local" id="pdt" value="${now().substring(0,16)}"></div>
+    <div class="form-group"><label class="form-label">记录者</label><input class="form-input" id="pr" value="${m}"></div>`,
+    `<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-orange btn-sm" onclick="savePoop()">保存</button>`);
+}
+function savePoop() {
+  if(!DATA.poopRecords) DATA.poopRecords=[];
+  DATA.poopRecords.push({id:'poop_'+Date.now(),quality:document.getElementById('pq').value,color:document.getElementById('pc').value,texture:document.getElementById('pt').value,date:document.getElementById('pdt').value.replace('T',' ')+':00',recordedBy:document.getElementById('pr').value||'家长'});
+  saveLocal();closeModal();toast('已保存');renderFeedingSub('poop');
+}
+function addSuppForm() {
+  showModal('添加补剂',`<div class="form-group"><label class="form-label">名称</label><input class="form-input" id="sn" placeholder="如：钙剂"></div><div class="form-group"><label class="form-label">用量</label><input class="form-input" id="sa2" value="1粒"></div>`,
+    `<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-primary btn-sm" onclick="saveSupp()">保存</button>`);
+}
+function saveSupp() {
+  const n=document.getElementById('sn').value;if(!n){toast('请输入名称','error');return;}
+  DATA.supplementRecords.push({id:'sup_'+Date.now(),type:n,amount:document.getElementById('sa2').value||'1粒',date:now(),recordedBy:DATA.baby.currentMember||'家长'});
+  saveLocal();closeModal();toast('已添加');renderFeedingSub('supplement');
+}
+function delFeed(id) { showConfirm('删除','确认删除？',()=>{DATA.feedingRecords=DATA.feedingRecords.filter(r=>r.id!==id);saveLocal();toast('已删除');renderFeedingSub(currentFeedingSub||'milk');}); }
+function delPoop(id) { showConfirm('删除','确认删除？',()=>{DATA.poopRecords=DATA.poopRecords.filter(r=>r.id!==id);saveLocal();toast('已删除');renderFeedingSub('poop');}); }
+function delSuppType(t) { showConfirm('删除',`确认删除"${t}"？`,()=>{DATA.supplementRecords=DATA.supplementRecords.filter(r=>r.type!==t);saveLocal();toast('已删除');renderFeedingSub('supplement');}); }
+
+let currentFeedingSub = 'milk';
+function renderFeedingSub(sub) {
+  currentFeedingSub = sub;
+  document.getElementById('feeding-content').innerHTML = renderFeedingContent(sub);
+  document.querySelectorAll('#feeding-tabs .tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`#feeding-tabs [data-sub="${sub}"]`)?.classList.add('active');
+}
+
+// ===================== GROWTH PAGE =====================
+function renderGrowth() {
+  const ageMonths = getAgeMonths(DATA.baby.birthDate);
+  const recs = DATA.growthRecords.sort((a,b)=>a.date.localeCompare(b.date));
+  const latest = recs.length>0?recs[recs.length-1]:null;
+  const gender = DATA.baby.gender||'boy';
+  const wData = gender==='girl'?WHO_WEIGHT_GIRLS:WHO_WEIGHT_BOYS;
+  const hData = gender==='girl'?WHO_HEIGHT_GIRLS:WHO_HEIGHT_BOYS;
+  const whoM = Object.keys(wData).map(Number).sort((a,b)=>a-b);
+  let cm = whoM[0]; for(const m of whoM){if(m<=ageMonths)cm=m;}
+  const ww = wData[cm],wh = hData[cm];
+
+  if(!DATA.healthChecks) DATA.healthChecks = CHILD_HEALTH_SCHEDULE.map(h=>({...h,id:'hc_'+Date.now()+Math.random(),completed:false}));
+  const upcoming = DATA.healthChecks.filter(h=>!h.completed).slice(0,5);
+
+  return `
+    <div class="grid-2" style="margin-bottom:16px">
+      <div class="card card-pink"><div class="card-header"><div class="card-title"><span class="icon">⚖️</span>体重</div></div>
+        ${latest?`<div style="text-align:center;padding:12px 0"><div style="font-size:40px;font-weight:800;color:var(--pink-dark)">${latest.weight}<span style="font-size:16px">kg</span></div>
+          <div style="font-size:12px;color:var(--text-light)">最近：${latest.date.split(' ')[0]} · 标准：${ww?ww[1]+'kg ('+ww[0]+'-'+ww[2]+'kg)':'-'}</div></div>`:'<div class="empty-state"><div class="es-icon">⚖️</div></div>'}
+        <div style="text-align:center"><button class="btn btn-primary btn-sm" onclick="addGrowth('weight')">记录体重</button></div></div>
+      <div class="card card-blue"><div class="card-header"><div class="card-title"><span class="icon">📏</span>身高</div></div>
+        ${latest?`<div style="text-align:center;padding:12px 0"><div style="font-size:40px;font-weight:800;color:var(--blue-dark)">${latest.height}<span style="font-size:16px">cm</span></div>
+          <div style="font-size:12px;color:var(--text-light)">最近：${latest.date.split(' ')[0]} · 标准：${wh?wh[1]+'cm ('+wh[0]+'-'+wh[2]+'cm)':'-'}</div></div>`:'<div class="empty-state"><div class="es-icon">📏</div></div>'}
+        <div style="text-align:center"><button class="btn btn-outline btn-sm" onclick="addGrowth('height')">记录身高</button></div></div>
+    </div>
+    ${recs.length>=2?renderGrowthChart(recs,wData,hData,ageMonths):''}
+    <div class="card card-green" style="margin-bottom:16px"><div class="card-header"><div class="card-title"><span class="icon">🏥</span>儿保检查</div><button class="btn btn-outline btn-sm" onclick="addHealth()">+ 添加</button></div>
+      ${DATA.healthChecks.map(h=>`<div class="tl-item"><div class="tl-dot ${h.completed?'done':'pending'}">${h.completed?'✓':'○'}</div><div class="tl-content"><div class="tl-title">${h.name}</div><div class="tl-date">建议：${h.age}${h.nextDate?' · 下次：'+h.nextDate:''}</div><div class="tl-desc">${h.desc||''}</div></div>
+        <div style="display:flex;gap:4px">${!h.completed?`<button class="btn btn-green btn-xs" onclick="markHealth('${h.id}')">完成</button>`:`<span class="tag tag-green">✅</span>`}<button class="btn btn-outline btn-xs" onclick="editHealth('${h.id}')">编辑</button></div></div>`).join('')}
+    </div>
+    <div class="card card-yellow"><div class="card-header"><div class="card-title"><span class="icon">🌟</span>成长里程碑</div><button class="btn btn-outline btn-sm" onclick="addMs()">+ 添加</button></div>
+      ${!DATA.milestones||DATA.milestones.length===0?'<div class="empty-state"><div class="es-icon">🌟</div></div>':''}
+      ${(DATA.milestones||[]).sort((a,b)=>b.date.localeCompare(a.date)).map(m=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0"><span style="font-size:20px">🌟</span><div style="flex:1"><div style="font-weight:700;font-size:13px">${m.name}</div><div style="font-size:11px;color:var(--text-light)">${m.date.split(' ')[0]}</div></div></div>`).join('')}
+    </div>
+  `;
+}
+
+function renderGrowthChart(recs,wData,hData,ageMonths) {
+  const W=600,H=280,pl=50,pr=30,pt=20,pb=40,cw=W-pl-pr,ch=H-pt-pb;
+  const wRecs=recs.filter(r=>!isNaN(parseFloat(r.weight))).map(r=>({x:getAgeM(r),y:parseFloat(r.weight),label:r.weight+'kg',d:r.date.split(' ')[0]}));
+  const hRecs=recs.filter(r=>!isNaN(parseFloat(r.height))).map(r=>({x:getAgeM(r),y:parseFloat(r.height),label:r.height+'cm',d:r.date.split(' ')[0]}));
+  const whoK=Object.keys(wData).map(Number).sort((a,b)=>a-b);
+  const w=wRecs.map(r=>r.y);const h=hRecs.map(r=>r.y);whoK.forEach(k=>{w.push(wData[k][0]);w.push(wData[k][2]);});
+  const wMin=Math.floor(Math.min(...w))-0.5,wMax=Math.ceil(Math.max(...w))+0.5;
+  const xMax=Math.max(ageMonths+2,Math.max(...recs.map(r=>getAgeM(r)))+2,12);
+  function x(v){return pl+(v/(xMax))*cw;}function y(v,min,max){return pt+ch-((v-min)/(max-min))*ch;}
+  const pts50=whoK.map(k=>({x:k,y:wData[k][1]})),pts3=whoK.map(k=>({x:k,y:wData[k][0]})),pts97=whoK.map(k=>({x:k,y:wData[k][2]}));
+  function pline(pts,min,max,c,d){return pts.length<2?'':`<polyline points="${pts.map(p=>x(p.x)+','+y(p.y,min,max)).join(' ')}" fill="none" stroke="${c}" stroke-width="${d?1.5:2}" stroke-dasharray="${d||''}"/>`;}
+  let grid='';for(let i=0;i<=5;i++){const v=wMin+(wMax-wMin)/5*i;const yy=y(v,wMin,wMax);grid+=`<line x1="${pl}" y1="${yy}" x2="${W-pr}" y2="${yy}" stroke="#eee" stroke-width="0.5"/><text x="${pl-8}" y="${yy+4}" text-anchor="end" font-size="9" fill="#999">${v.toFixed(1)}</text>`;}
+  return `
+    <div class="card card-white" style="margin-bottom:16px"><div class="card-header"><div class="card-title"><span class="icon">📈</span>体重曲线 (kg)</div></div>
+      <div class="chart-wrap"><svg viewBox="0 0 ${W} ${H}" style="max-width:${W}px">
+        ${grid}${pline(pts3,wMin,wMax,'#ddd','4,4')}${pline(pts50,wMin,wMax,'#ccc','4,4')}${pline(pts97,wMin,wMax,'#ddd','4,4')}
+        ${pline(wRecs,wMin,wMax,'var(--pink)')}
+        ${wRecs.map(p=>`<circle cx="${x(p.x)}" cy="${y(p.y,wMin,wMax)}" r="5" fill="var(--pink)" stroke="#fff" stroke-width="2"/><text x="${x(p.x)}" y="${y(p.y,wMin,wMax)-10}" text-anchor="middle" font-size="9" fill="var(--pink-dark)" font-weight="700">${p.label}</text>`).join('')}
+        ${[0,3,6,9,12,18,24].filter(m=>m<=xMax).map(m=>`<text x="${x(m)}" y="${H-10}" text-anchor="middle" font-size="9" fill="#999">${m}月</text>`).join('')}
+        <line x1="${pl}" y1="${H-pb}" x2="${W-pr}" y2="${H-pb}" stroke="#ddd"/></svg></div></div>`;
+}
+
+function getAgeM(r) { if(!DATA.baby.birthDate)return 0;const b=new Date(DATA.baby.birthDate);const d=new Date(r.date);return(d.getFullYear()-b.getFullYear())*12+(d.getMonth()-b.getMonth()); }
+function addGrowth(type) {
+  const m=DATA.baby.currentMember||'家长',l=type==='weight'?'体重(kg)':'身高(cm)';
+  showModal('记录'+l,`<div class="form-group"><label class="form-label">${l}</label><input class="form-input" type="number" id="gv" step="0.1"></div><div class="form-group"><label class="form-label">日期</label><input class="form-input" type="date" id="gd" value="${today()}"></div><div class="form-group"><label class="form-label">记录者</label><input class="form-input" id="gr" value="${m}"></div>`,
+    `<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-primary btn-sm" onclick="saveGrowth('${type}')">保存</button>`);
+}
+function saveGrowth(type) {
+  const v=document.getElementById('gv').value;if(!v){toast('请输入数值','error');return;}
+  const d=document.getElementById('gd').value;const r=document.getElementById('gr').value||'家长';
+  const ex=DATA.growthRecords.find(rr=>rr.date===d);
+  if(ex){if(type==='weight')ex.weight=v;else ex.height=v;}else{DATA.growthRecords.push({id:'growth_'+Date.now(),date:d,recordedBy:r,[type]:v});}
+  saveLocal();closeModal();toast('已保存');renderPage('growth');
+}
+function addMs() {
+  showModal('添加里程碑',`<div class="form-group"><label class="form-label">里程碑</label><input class="form-input" id="msn" placeholder="如：第一次翻身"></div><div class="form-group"><label class="form-label">日期</label><input class="form-input" type="date" id="msd" value="${today()}"></div>`,
+    `<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-primary btn-sm" onclick="saveMs()">保存</button>`);
+}
+function saveMs() {
+  if(!DATA.milestones) DATA.milestones=[];
+  DATA.milestones.push({id:'ms_'+Date.now(),name:document.getElementById('msn').value,date:document.getElementById('msd').value});
+  saveLocal();closeModal();toast('已添加');renderPage('growth');
+}
+function markHealth(id) {
+  showModal('标记完成',`<div class="form-group"><label class="form-label">检查日期</label><input class="form-input" type="date" id="hdd" value="${today()}"></div><div class="form-group"><label class="form-label">下次预约</label><input class="form-input" type="date" id="hnd" placeholder="选填"></div>`,
+    `<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-green btn-sm" onclick="saveHealth('${id}')">保存</button>`);
+}
+function saveHealth(id){const h=DATA.healthChecks.find(hh=>hh.id===id);if(h){h.completed=true;h.completedDate=document.getElementById('hdd').value;const nd=document.getElementById('hnd').value;if(nd)h.nextDate=nd;}saveLocal();closeModal();toast('已标记');renderPage('growth');}
+function addHealth(){
+  showModal('添加检查',`<div class="form-group"><label class="form-label">名称</label><input class="form-input" id="nhn" placeholder="如：6月体检"></div><div class="form-group"><label class="form-label">建议月龄</label><input class="form-input" id="nha"></div><div class="form-group"><label class="form-label">预约时间</label><input class="form-input" type="date" id="nhd"></div>`,
+    `<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-green btn-sm" onclick="saveNewHealth()">保存</button>`);
+}
+function saveNewHealth(){const n=document.getElementById('nhn').value;if(!n){toast('请输入名称','error');return;}DATA.healthChecks.push({id:'hc_'+Date.now(),name:n,age:document.getElementById('nha').value,nextDate:document.getElementById('nhd').value||'',completed:false});saveLocal();closeModal();toast('已添加');renderPage('growth');}
+function editHealth(id){const h=DATA.healthChecks.find(hh=>hh.id===id);if(!h)return;
+  showModal('编辑',`<div class="form-group"><label class="form-label">名称</label><input class="form-input" id="ehcn" value="${h.name}"></div><div class="form-group"><label class="form-label">月龄</label><input class="form-input" id="ehca" value="${h.age}"></div><div class="form-group"><label class="form-label">下次预约</label><input class="form-input" type="date" id="ehcd" value="${h.nextDate||''}"></div>`,
+    `<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-primary btn-sm" onclick="saveEditHealth('${id}')">保存</button>`);
+}
+function saveEditHealth(id){const h=DATA.healthChecks.find(hh=>hh.id===id);if(h){h.name=document.getElementById('ehcn').value;h.age=document.getElementById('ehca').value;const nd=document.getElementById('ehcd').value;if(nd)h.nextDate=nd;}saveLocal();closeModal();toast('已更新');renderPage('growth');}
+
+// ===================== VACCINE PAGE =====================
+function renderVaccine() {
+  if(!DATA.vaccineRecords||DATA.vaccineRecords.length===0){DATA.vaccineRecords=VACCINE_SCHEDULE.map((v,i)=>({...v,id:'vac_'+i,completed:false}));saveLocal();}
+  const up=DATA.vaccineRecords.filter(v=>!v.completed).slice(0,8);
+  const done=DATA.vaccineRecords.filter(v=>v.completed);
+  return `
+    <div class="stat-blocks" style="margin-bottom:16px">
+      <div class="stat-block green"><div class="sb-value">${done.length}/${DATA.vaccineRecords.length}</div><div class="sb-label">💉 接种进度</div></div>
+      <div class="stat-block orange"><div class="sb-value">${up.length}</div><div class="sb-label">📋 待接种</div></div>
+    </div>
+    <div class="card card-blue" style="margin-bottom:16px"><div class="card-header"><div class="card-title"><span class="icon">📋</span>待接种</div><button class="btn btn-outline btn-sm" onclick="addVax()">+ 添加</button></div>
+      ${up.length===0?'<div class="empty-state"><div class="es-icon">🎉</div><div class="es-text">全部完成！</div></div>':''}
+      ${up.map(v=>`<div class="tl-item"><div class="tl-dot pending">○</div><div class="tl-content"><div class="tl-title">${v.name} · ${v.dose}</div><div class="tl-date">建议：${v.age}${v.scheduledDate?' · 预约：'+v.scheduledDate:''}</div>${v.notes?`<div class="tl-desc">📝 ${v.notes}</div>`:''}${v.questions?`<div class="tl-desc" style="color:var(--blue)">❓ ${v.questions}</div>`:''}</div>
+        <div style="display:flex;gap:4px"><button class="btn btn-green btn-xs" onclick="markVax('${v.id}')">完成</button><button class="btn btn-outline btn-xs" onclick="editVax('${v.id}')">编辑</button></div></div>`).join('')}
+    </div>
+    <div class="card card-green"><div class="card-header"><div class="card-title"><span class="icon">✅</span>已完成</div></div>
+      ${done.length===0?'<div class="empty-state"><div class="es-icon">💉</div></div>':''}
+      ${done.sort((a,b)=>b.completedDate?.localeCompare(a.completedDate||'')||0).map(v=>`<div class="tl-item"><div class="tl-dot done">✓</div><div class="tl-content"><div class="tl-title">${v.name} · ${v.dose}</div><div class="tl-date">接种：${v.completedDate||'-'}${v.reaction?' · '+v.reaction:''}</div></div><button class="btn btn-outline btn-xs" onclick="editVax('${v.id}')">编辑</button></div>`).join('')}
+    </div>
+  `;
+}
+function markVax(id){showModal('记录接种',`<div class="form-group"><label class="form-label">接种日期</label><input class="form-input" type="date" id="vdd" value="${today()}"></div><div class="form-group"><label class="form-label">反应</label><input class="form-input" id="vr" placeholder="如：无反应"></div><div class="form-group"><label class="form-label">下次预约</label><input class="form-input" type="date" id="vnd"></div>`,`<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-green btn-sm" onclick="saveVax('${id}')">保存</button>`);}
+function saveVax(id){const v=DATA.vaccineRecords.find(r=>r.id===id);if(v){v.completed=true;v.completedDate=document.getElementById('vdd').value;v.reaction=document.getElementById('vr').value;const nd=document.getElementById('vnd').value;if(nd)v.scheduledDate=nd;}saveLocal();closeModal();toast('已记录');renderPage('vaccine');}
+function editVax(id){const v=DATA.vaccineRecords.find(r=>r.id===id);if(!v)return;showModal('编辑',`<div class="form-group"><label class="form-label">名称</label><input class="form-input" id="evn" value="${v.name}"></div><div class="form-group"><label class="form-label">剂次</label><input class="form-input" id="evd" value="${v.dose}"></div><div class="form-group"><label class="form-label">月龄</label><input class="form-input" id="eva" value="${v.age}"></div><div class="form-group"><label class="form-label">注意事项</label><textarea class="form-textarea" id="evno">${v.notes||''}</textarea></div><div class="form-group"><label class="form-label">问医生问题</label><textarea class="form-textarea" id="evq">${v.questions||''}</textarea></div><div class="form-group"><label class="form-label">预约时间</label><input class="form-input" type="date" id="evs" value="${v.scheduledDate||''}"></div>`,`<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-primary btn-sm" onclick="saveEditVax('${id}')">保存</button>`);}
+function saveEditVax(id){const v=DATA.vaccineRecords.find(r=>r.id===id);if(v){v.name=document.getElementById('evn').value;v.dose=document.getElementById('evd').value;v.age=document.getElementById('eva').value;v.notes=document.getElementById('evno').value;v.questions=document.getElementById('evq').value;const sd=document.getElementById('evs').value;if(sd)v.scheduledDate=sd;}saveLocal();closeModal();toast('已更新');renderPage('vaccine');}
+function addVax(){showModal('添加疫苗',`<div class="form-group"><label class="form-label">名称</label><input class="form-input" id="nvn"></div><div class="form-group"><label class="form-label">剂次</label><input class="form-input" id="nvd" value="第1剂"></div><div class="form-group"><label class="form-label">月龄</label><input class="form-input" id="nva"></div>`,`<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-primary btn-sm" onclick="saveNewVax()">保存</button>`);}
+function saveNewVax(){const n=document.getElementById('nvn').value;if(!n){toast('请输入名称','error');return;}DATA.vaccineRecords.push({id:'vax_'+Date.now(),name:n,dose:document.getElementById('nvd').value,age:document.getElementById('nva').value,completed:false});saveLocal();closeModal();toast('已添加');renderPage('vaccine');}
+
+// ===================== EDUCATION PAGE =====================
+function getDailyEduVideo(age) { const p=EDU_VIDEOS.filter(v=>v.month[0]<=age&&v.month[1]>=age); return seededPick(p.length>0?p:EDU_VIDEOS, getDailySeed('edu_video')); }
+function getDailyRhyme(age) { const p=NURSERY_RHYMES.filter(r=>r.month[0]<=age&&r.month[1]>=age); return seededPick(p.length>0?p:NURSERY_RHYMES, getDailySeed('rhyme')); }
+
+function renderEducation() {
+  const ageM = getAgeMonths(DATA.baby.birthDate); const t = today();
+  const dv = getDailyEduVideo(ageM), dr = getDailyRhyme(ageM);
+
+  if(!DATA.educationRecords||DATA.educationRecords.length===0){
+    DATA.educationRecords=EARLY_EDUCATION.filter(e=>e.month[0]<=ageM&&e.month[1]>=ageM).map(e=>({...e,id:'edu_'+Date.now()+Math.random(),done:false,date:t}));
+    saveLocal();
+  }
+  const cur = EARLY_EDUCATION.filter(e=>e.month[0]<=ageM&&e.month[1]>=ageM);
+  cur.forEach(e=>{const ex=DATA.educationRecords.find(r=>r.name===e.name&&r.cat===e.cat);if(!ex)DATA.educationRecords.push({...e,id:'edu_'+Date.now()+Math.random(),done:false,date:t});});
+  saveLocal();
+  const tasks=DATA.educationRecords.filter(r=>r.date===t);
+  const dc=tasks.filter(r=>r.done).length,tc=tasks.length;
+  const cats=['大运动','感官','听觉','触觉','精细','语言','社交','认知'];
+  const grp={};cats.forEach(c=>{grp[c]=tasks.filter(r=>r.cat===c);});
+
+  return `
+    <div style="margin-bottom:16px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="font-size:16px;font-weight:800">🎬 今日早教推荐</span><span class="date-badge">📅 ${t}</span><span style="font-size:11px;color:var(--text-muted)">每天自动更新</span></div>
+      <div class="daily-grid">
+        ${dv?`<div class="video-block"><div class="vb-header"><span class="vb-icon">${dv.icon||'🎬'}</span><div class="vb-info"><div class="vb-title">${dv.title}</div><div class="vb-desc">${dv.desc}</div></div></div>
+          <div class="vb-wrapper"><iframe src="//player.bilibili.com/player.html?bvid=${dv.bvid}&page=1&autoplay=0&danmaku=0&high_quality=1" allowfullscreen loading="lazy"></iframe></div>
+          <div class="vb-footer">🏷️ ${(dv.tags||[]).map(t=>'<span class="tag tag-pink">'+t+'</span>').join(' ')}</div></div>`:''}
+        ${dr?`<div><div class="audio-bar"><div class="ab-header"><span class="ab-icon">${dr.icon||'🎵'}</span><div><div class="ab-title">🎵 ${dr.title}</div><div class="ab-desc">今日儿歌 · 跟着唱给宝宝听</div></div></div>
+          <div class="ab-controls"><button class="ab-play" onclick="playRhyme()" id="rp-btn">▶</button><button class="btn btn-ghost btn-xs" onclick="stopRhyme()">⏹ 停止</button><button class="speak-btn btn-xs" onclick="speakRhymeCN()" style="margin-left:auto">🔊 朗读</button></div></div>
+          <div class="lyrics-box">${dr.lyrics.map(l=>`<div class="lyric-line"><span class="l-cn">${l[0]}</span><span class="l-en">${l[1]}</span></div>`).join('')}</div></div>`:''}
+      </div>
+    </div>
+
+    <div class="card card-pink" style="margin-bottom:16px"><div class="card-header"><div class="card-title"><span class="icon">🎯</span>今日早教打卡 · ${getMonthLabel(ageM)}</div></div>
+      <div style="text-align:center;padding:16px 0"><div style="font-size:36px;font-weight:800;color:var(--pink-dark)">${dc}/${tc}</div>
+        <div class="progress-wrap" style="max-width:300px;margin:8px auto"><div class="progress-fill pink" style="width:${tc>0?dc/tc*100:0}%"></div></div><div style="font-size:12px;color:var(--text-light)">打卡进度</div></div>
+    </div>
+    ${cats.map(c=>{const items=grp[c]||[];if(items.length===0)return '';return`<div class="card card-white" style="margin-bottom:12px"><div class="card-header"><div class="card-title"><span class="icon">${items[0].icon||'⭐'}</span>${c}</div></div>
+      <div class="checkin-grid">${items.map(e=>`<div class="checkin-box ${e.done?'done':''}" onclick="checkInEdu('${e.id}')"><div class="cb-icon">${e.icon||'⭐'}</div><div class="cb-name">${e.name}</div><div class="cb-desc">${e.desc}</div>${e.done?'<div class="cb-check">✅ 已完成</div>':''}</div>`).join('')}</div></div>`;}).join('')}
+    <div class="card card-white"><div class="card-header"><div class="card-title"><span class="icon">📜</span>打卡历史</div></div>${renderEduHistory()}</div>
+  `;
+}
+
+let rhymeUtt = null;
+function playRhyme() {
+  stopRhyme();const ageM=getAgeMonths(DATA.baby.birthDate);const dr=getDailyRhyme(ageM);if(!dr)return;
+  const txt=dr.lyrics.map(l=>l[0]).join('。');
+  if('speechSynthesis' in window){speechSynthesis.cancel();rhymeUtt=new SpeechSynthesisUtterance(txt);rhymeUtt.lang='zh-CN';rhymeUtt.rate=0.7;rhymeUtt.pitch=1.2;
+    speechSynthesis.speak(rhymeUtt);const b=document.getElementById('rp-btn');if(b)b.textContent='⏸';rhymeUtt.onend=()=>{if(b)b.textContent='▶';rhymeUtt=null;};toast('🎵 朗读中...','info');}else toast('浏览器不支持语音','error');
+}
+function stopRhyme(){if('speechSynthesis' in window)speechSynthesis.cancel();rhymeUtt=null;const b=document.getElementById('rp-btn');if(b)b.textContent='▶';}
+function speakRhymeCN(){const ageM=getAgeMonths(DATA.baby.birthDate);const dr=getDailyRhyme(ageM);if(!dr)return;if('speechSynthesis' in window){speechSynthesis.cancel();let i=0;function nx(){if(i>=dr.lyrics.length)return;const u=new SpeechSynthesisUtterance(dr.lyrics[i][0]);u.lang='zh-CN';u.rate=0.65;u.onend=()=>{setTimeout(()=>{i++;nx();},400);};speechSynthesis.speak(u);}nx();toast('🔊 逐句朗读中','info');}}
+function checkInEdu(id){const r=DATA.educationRecords.find(ee=>ee.id===id);if(r){r.done=!r.done;saveLocal();toast(r.done?'✅ 打卡成功！':'已取消');if(currentPage==='education')renderPage('education');else renderPage('home');}}
+function renderEduHistory(){const g={};DATA.educationRecords.forEach(r=>{if(!r.done)return;if(!g[r.date])g[r.date]=[];g[r.date].push(r);});const ds=Object.keys(g).sort((a,b)=>b.localeCompare(a)).slice(0,10);if(ds.length===0)return'<div class="empty-state"><div class="es-text">还没有打卡</div></div>';return ds.map(d=>`<div style="margin-bottom:8px"><div style="font-size:12px;font-weight:700;color:var(--text-light);margin-bottom:4px">📅 ${d}</div><div style="display:flex;flex-wrap:wrap;gap:4px">${g[d].map(r=>`<span class="tag tag-green">${r.icon||'⭐'} ${r.name}</span>`).join('')}</div></div>`).join('');}
+
+// ===================== BILINGUAL PAGE =====================
+function getDailyEngSong(age){const p=ENGLISH_SONGS.filter(s=>s.month[0]<=age&&s.month[1]>=age);return seededPick(p.length>0?p:ENGLISH_SONGS,getDailySeed('eng_song'));}
+function getDailyDialogue(){return seededPick(ENGLISH_DIALOGUES,getDailySeed('dialogue'));}
+function getDailyEngStory(age){const p=ENGLISH_STORY_VIDEOS.filter(s=>s.month[0]<=age&&s.month[1]>=age);return seededPick(p.length>0?p:ENGLISH_STORY_VIDEOS,getDailySeed('eng_story'));}
+
+function renderBilingual() {
+  const ageM=getAgeMonths(DATA.baby.birthDate),cp=BILINGUAL_PLANS.find(p=>p.month[0]<=ageM&&p.month[1]>=ageM);
+  const ds=getDailyEngSong(ageM),dd=getDailyDialogue(),dst=getDailyEngStory(ageM);
+  return `
+    <div style="margin-bottom:16px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="font-size:16px;font-weight:800">🔤 今日英语启蒙</span><span class="date-badge">📅 ${today()}</span><span style="font-size:11px;color:var(--text-muted)">每天自动更新</span></div>
+      ${dd?`<div class="phrase-block"><div class="pb-label">💬 今日亲子英语</div><div class="pb-eng">${dd.phrase}</div><div class="pb-cn">${dd.cn}</div><div class="pb-ctx">📌 场景：${dd.context} · 💡 ${dd.tips}</div>
+        <div class="pb-actions"><button class="speak-btn" onclick="speakEN('${dd.phrase.replace(/'/g,"\\'")}')" id="esb">🔊 听发音</button><button class="speak-btn" onclick="speakENSlow('${dd.phrase.replace(/'/g,"\\'")}')" id="essb">🐢 慢速</button></div></div>`:''}
+      <div class="daily-grid">
+        ${ds?`<div class="video-block"><div class="vb-header en"><span class="vb-icon">${ds.icon||'🎵'}</span><div class="vb-info"><div class="vb-title">${ds.title}</div><div class="vb-desc">${ds.desc}</div></div></div>
+          <div class="vb-wrapper"><iframe src="https://www.youtube.com/embed/${ds.videoId}?autoplay=0&rel=0" allowfullscreen loading="lazy"></iframe></div><div class="vb-footer">🎵 每日英语儿歌 · 磨耳朵必备</div></div>`:''}
+        ${dst?`<div class="video-block"><div class="vb-header en"><span class="vb-icon">${dst.icon||'📖'}</span><div class="vb-info"><div class="vb-title">${dst.title}</div><div class="vb-desc">${dst.desc}</div></div></div>
+          <div class="vb-wrapper"><iframe src="https://www.youtube.com/embed/${dst.videoId}?autoplay=0&rel=0" allowfullscreen loading="lazy"></iframe></div><div class="vb-footer">📖 每日英语绘本 · 亲子共读</div></div>`:''}
+      </div>
+    </div>
+    <div class="card card-blue" style="margin-bottom:16px"><div class="card-header"><div class="card-title"><span class="icon">📋</span>当前阶段：${cp?cp.title:'-'}</div></div>
+      <div style="font-size:13px;color:var(--text-light);margin-bottom:12px">宝宝月龄：${getMonthLabel(ageM)}</div>
+      ${cp?`<div style="margin-bottom:16px"><div style="font-weight:800;font-size:14px;margin-bottom:8px">👨‍👩‍👧 家长可以做的事：</div>
+        ${cp.activities.map((a,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.04)"><div style="width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">${i+1}</div><div style="font-size:13px">${a}</div></div>`).join('')}</div>
+        <div style="padding:14px;background:var(--blue-light);border-radius:var(--radius-sm)"><div style="font-weight:700;font-size:13px">📚 ${cp.parentResource}</div></div>`:'<div class="empty-state"><div class="es-icon">🔤</div></div>'}
+    </div>
+    <div class="card card-white"><div class="card-header"><div class="card-title"><span class="icon">📅</span>全部阶段</div></div>
+      ${BILINGUAL_PLANS.map(p=>{const isCur=p.month[0]<=ageM&&p.month[1]>=ageM;return`<div class="tl-item"><div class="tl-dot ${isCur?'current':'pending'}">${isCur?'▶':'○'}</div><div class="tl-content"><div class="tl-title">${p.title} ${isCur?'<span class="tag tag-pink">当前</span>':''}</div><div class="tl-date">${p.month[0]}-${p.month[1]}个月</div></div></div>`;}).join('')}
+    </div>
+  `;
+}
+
+function speakEN(text){speakEnRate(text,0.8);}
+function speakENSlow(text){speakEnRate(text,0.5);}
+function speakEnRate(text,rate){
+  if(!('speechSynthesis' in window)){toast('浏览器不支持','error');return;}
+  speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=rate;
+  const b1=document.getElementById('esb'),b2=document.getElementById('essb'),t1=b1?b1.textContent:'',t2=b2?b2.textContent:'';
+  if(b1){b1.textContent='播放中...';b1.classList.add('active');}if(b2){b2.textContent='播放中...';b2.classList.add('active');}
+  u.onend=()=>{if(b1){b1.textContent=t1;b1.classList.remove('active');}if(b2){b2.textContent=t2;b2.classList.remove('active');}};
+  speechSynthesis.speak(u);
+}
+
+// ===================== FAMILY PAGE =====================
+function renderFamily() {
+  const ms=DATA.members||[],cm=DATA.baby.currentMember||'';
+  const colors=['#FF6B8A','#5B9BD5','#3ECF8E','#FF8C42','#9B7ED8','#FF6F61','#26C6B7','#FFD23F'];
+  return `
+    <div class="card card-pink" style="margin-bottom:16px"><div class="card-header"><div class="card-title"><span class="icon">👨‍👩‍👧</span>家庭成员</div><button class="btn btn-primary btn-sm" onclick="addMember()">+ 添加</button></div>
+      ${ms.length===0?'<div class="empty-state"><div class="es-icon">👨‍👩‍👧</div></div>':''}
+      <div class="family-row" style="margin-bottom:12px">${ms.map((m,i)=>{const bg=colors[i%colors.length];return`<div class="family-chip" style="background:${bg};${m.name===cm?'box-shadow:0 4px 12px '+bg+'80;':''}" onclick="switchFam('${m.name}')">${m.emoji||'👤'} ${m.name}</div>`;}).join('')}</div>
+      ${ms.map((m,i)=>{const bg=colors[i%colors.length];const isCur=m.name===cm;return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.04)">
+        <div style="width:36px;height:36px;border-radius:50%;background:${bg};color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${m.emoji||'👤'}</div>
+        <div style="flex:1"><div style="font-weight:700;font-size:13px">${m.name} (${m.role}) ${isCur?'<span class="tag tag-pink">当前</span>':''}</div></div>
+        ${!isCur?`<button class="btn btn-outline btn-xs" onclick="switchFam('${m.name}')">切换</button>`:''}<button class="btn btn-ghost btn-xs" onclick="delMember('${m.name}')">删除</button></div>`}).join('')}
+    </div>
+    <div class="card card-white"><div class="card-header"><div class="card-title"><span class="icon">👶</span>宝宝信息</div></div>
+      <div class="form-group"><label class="form-label">名字</label><input class="form-input" id="bname" value="${DATA.baby.name||'麦宝'}" onchange="updateBaby()"></div>
+      <div class="form-group"><label class="form-label">出生日期</label><input class="form-input" type="date" id="bbirth" value="${DATA.baby.birthDate||''}" onchange="updateBaby()"></div>
+      <div class="form-group"><label class="form-label">性别</label><select class="form-select" id="bgen" onchange="updateBaby()"><option value="">选择</option><option value="boy" ${DATA.baby.gender==='boy'?'selected':''}>👦 男宝</option><option value="girl" ${DATA.baby.gender==='girl'?'selected':''}>👧 女宝</option></select></div>
+    </div>
+  `;
+}
+function updateBaby(){DATA.baby.name=document.getElementById('bname').value||'麦宝';DATA.baby.birthDate=document.getElementById('bbirth').value;DATA.baby.gender=document.getElementById('bgen').value;saveLocal();updateBabyDisp();toast('已更新');}
+function addMember(){showModal('添加家庭成员',`<div class="form-group"><label class="form-label">称呼</label><input class="form-input" id="mn2"></div><div class="form-group"><label class="form-label">关系</label><select class="form-select" id="mr2"><option value="妈妈">妈妈</option><option value="爸爸">爸爸</option><option value="爷爷">爷爷</option><option value="奶奶">奶奶</option><option value="外公">外公</option><option value="外婆">外婆</option></select></div><div class="form-group"><label class="form-label">表情</label><input class="form-input" id="me2" placeholder="如：👩" maxlength="2"></div>`,`<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-primary btn-sm" onclick="saveMember()">保存</button>`);}
+function saveMember(){const n=document.getElementById('mn2').value;if(!n){toast('请输入称呼','error');return;}if(!DATA.members)DATA.members=[];if(DATA.members.find(m=>m.name===n)){toast('已存在','error');return;}DATA.members.push({name:n,role:document.getElementById('mr2').value,emoji:document.getElementById('me2').value||'👤'});if(!DATA.baby.currentMember)DATA.baby.currentMember=n;saveLocal();closeModal();updateSel();toast('已添加');renderPage('family');}
+function delMember(n){showConfirm('删除',`确认删除"${n}"？`,()=>{DATA.members=DATA.members.filter(m=>m.name!==n);if(DATA.baby.currentMember===n)DATA.baby.currentMember=DATA.members[0]?.name||'';saveLocal();updateSel();toast('已删除');renderPage('family');});}
+function switchFam(n){DATA.baby.currentMember=n;saveLocal();updateSel();toast('已切换为 '+n);renderPage('family');}
+function switchMember(){const s=document.getElementById('current-member');if(s){DATA.baby.currentMember=s.value;saveLocal();toast('已切换');}}
+function updateSel(){const s=document.getElementById('current-member');if(!s)return;const ms=DATA.members||[];s.innerHTML=ms.map(m=>`<option value="${m.name}" ${m.name===DATA.baby.currentMember?'selected':''}>${m.emoji||'👤'} ${m.name}(${m.role})</option>`).join('');if(ms.length===0)s.innerHTML='<option value="">请先添加成员</option>';}
+function updateBabyDisp(){const a=getAgeMonths(DATA.baby.birthDate),el=document.getElementById('sidebar-baby-info');if(el){if(DATA.baby.birthDate)el.textContent=`${DATA.baby.name||'麦宝'} · ${getMonthLabel(a)}`;else el.textContent='请设置宝宝信息';}}
+
+// ===================== INIT =====================
+async function init() {
+  refreshLocalData();
+  document.getElementById('current-date').textContent = today();
+
+  // Test server connection
+  const online = await testConnection();
+  if (online) {
+    await syncPull(true); // initial data pull from server (silent)
+    setupSSE();
+  } else {
+    // Offline mode - still usable with localStorage
+    updateSyncUI(false);
+  }
+  // Fallback polling (safeguard against SSE failure)
+  startPolling();
+
+  document.querySelectorAll('.nav-item').forEach(item=>{
+    item.addEventListener('click',()=>navigateTo(item.dataset.page));
+  });
+
+  document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+  document.getElementById('confirm-overlay').addEventListener('click',function(e){if(e.target===this)closeConfirm();});
+
+  // Ensure data structures
+  if(!DATA.feedingRecords) DATA.feedingRecords=[];
+  if(!DATA.supplementRecords) DATA.supplementRecords=[];
+  if(!DATA.poopRecords) DATA.poopRecords=[];
+  if(!DATA.growthRecords) DATA.growthRecords=[];
+  if(!DATA.milestones) DATA.milestones=[];
+  if(!DATA.members) DATA.members=[];
+  if(!DATA.educationRecords) DATA.educationRecords=[];
+  saveLocal(true);
+
+  updateSel();updateBabyDisp();
+  navigateTo('home');
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+// Periodic refresh
+setInterval(()=>{refreshLocalData();document.getElementById('current-date').textContent=today();},30000);
+</script>
+<!-- PWA Install Prompt -->
+<div id="install-banner" style="display:none;position:fixed;bottom:16px;left:16px;right:16px;background:#fff;border-radius:var(--radius);box-shadow:0 8px 32px rgba(0,0,0,0.15);padding:16px;z-index:90;display:flex;align-items:center;gap:12px">
+  <span style="font-size:32px">🐣</span>
+  <div style="flex:1"><div style="font-weight:800;font-size:14px">添加到主屏幕</div><div style="font-size:12px;color:var(--text-light)">像App一样使用麦宝成长日记</div></div>
+  <button class="btn btn-primary btn-sm" id="install-btn" onclick="installPWA()">安装</button>
+  <button class="btn btn-ghost btn-xs" onclick="document.getElementById('install-banner').style.display='none'">✕</button>
+</div>
+
+<script>
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      console.log('SW registered');
+    }).catch(() => {});
+  });
+}
+
+// PWA Install
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Show install banner after 3 seconds
+  setTimeout(() => {
+    document.getElementById('install-banner').style.display = 'flex';
+  }, 3000);
+});
+
+function installPWA() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => {
+      deferredPrompt = null;
+      document.getElementById('install-banner').style.display = 'none';
+    });
+  }
+}
+
+// Hide banner if already installed
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-banner').style.display = 'none';
+});
+
+// Push notification subscription (optional)
+async function subscribePush() {
+  if ('Notification' in window && 'serviceWorker' in navigator) {
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+      const reg = await navigator.serviceWorker.ready;
+      // VAPID keys would be needed for actual push, skip for now
+      console.log('Push notifications enabled');
+    }
+  }
+}
+</script>
+
+</body>
+</html>
