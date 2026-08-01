@@ -97,12 +97,16 @@ body{
   display:flex;align-items:center;padding:0 24px;gap:16px;
 }
 .main-header .page-title{font-size:18px;font-weight:800;color:var(--text)}
-.main-header .family-switch{margin-left:auto;display:flex;align-items:center;gap:8px}
-.main-header .family-switch select{
-  border:2px solid var(--border);border-radius:10px;padding:7px 14px;
-  font-size:13px;color:var(--text);background:#fff;cursor:pointer;font-family:inherit;
-  font-weight:600;
+.main-header .family-switch{display:flex;align-items:center;gap:4px}
+.hdr-avatar{
+  width:36px;height:36px;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;color:#fff;transition:all 0.2s;
+  border:2px solid transparent;flex-shrink:0;
 }
+.hdr-avatar:hover{transform:scale(1.1)}
+.hdr-avatar.active{border-color:var(--pink);box-shadow:0 0 0 2px var(--pink-light);transform:scale(1.15)}
+.hdr-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 .main-header .current-date{
   font-size:12px;color:var(--text-light);background:var(--yellow-light);
   padding:4px 12px;border-radius:20px;font-weight:600;
@@ -550,10 +554,7 @@ body{
       <h1 class="page-title" id="page-title">首页</h1>
       <span class="current-date" id="current-date"></span>
       <span style="font-size:12px;color:var(--pink);font-weight:700;background:var(--pink-light);padding:4px 10px;border-radius:20px;margin-left:6px" id="header-age"></span>
-      <div class="family-switch">
-        <span style="font-size:12px;color:var(--text-light)">当前：</span>
-        <select id="current-member" onchange="switchMember()"></select>
-      </div>
+      <div class="family-switch" id="family-avatars"></div>
     </header>
     <div class="main-content" id="main-content"></div>
   </main>
@@ -1701,8 +1702,19 @@ function addMember(){showModal('添加家庭成员',`<div class="form-group"><la
 function saveMember(){const n=document.getElementById('mn2').value;if(!n){toast('请输入称呼','error');return;}if(!DATA.members)DATA.members=[];if(DATA.members.find(m=>m.name===n)){toast('已存在','error');return;}DATA.members.push({name:n,role:document.getElementById('mr2').value,emoji:document.getElementById('me2').value||'👤'});if(!DATA.baby.currentMember)DATA.baby.currentMember=n;saveLocal();closeModal();updateSel();toast('已添加');renderPage('family');}
 function delMember(n){showConfirm('删除',`确认删除"${n}"？`,()=>{DATA.members=DATA.members.filter(m=>m.name!==n);if(DATA.baby.currentMember===n)DATA.baby.currentMember=DATA.members[0]?.name||'';saveLocal();updateSel();toast('已删除');renderPage('family');});}
 function switchFam(n){DATA.baby.currentMember=n;saveLocal();updateSel();toast('已切换为 '+n);renderPage('family');}
-function switchMember(){const s=document.getElementById('current-member');if(s){DATA.baby.currentMember=s.value;saveLocal();toast('已切换');}}
-function updateSel(){const s=document.getElementById('current-member');if(!s)return;const ms=DATA.members||[];s.innerHTML=ms.map(m=>`<option value="${m.name}" ${m.name===DATA.baby.currentMember?'selected':''}>${m.emoji||'👤'} ${m.name}(${m.role})</option>`).join('');if(ms.length===0)s.innerHTML='<option value="">请先添加成员</option>';}
+function updateSel(){
+  const el=document.getElementById('family-avatars');
+  if(!el)return;
+  const ms=DATA.members||[],cm=DATA.baby.currentMember||'';
+  const colors=['#FF6B8A','#5B9BD5','#3ECF8E','#FF8C42','#9B7ED8','#FF6F61','#26C6B7'];
+  el.innerHTML=ms.map((m,i)=>{
+    const bg=colors[i%colors.length],active=m.name===cm;
+    return `<div title="${m.name}(${m.role})" onclick="switchFam('${m.name}')" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px">
+      <div class="hdr-avatar ${active?'active':''}" style="background:${bg}">${m.photo?`<img src="${m.photo}">`:m.emoji||'👤'}</div>
+    </div>`;
+  }).join('');
+  if(ms.length===0) el.innerHTML='<span style="font-size:12px;color:var(--text-muted)">请先添加家人</span>';
+}
 function updateBabyDisp(){const el=document.getElementById('sidebar-baby-info');if(el){if(DATA.baby.birthDate)el.textContent=`${DATA.baby.name||'麦宝'} · ${getAgeText(DATA.baby.birthDate)} ${DATA.baby.gender==='boy'?'👦':'👧'}`;else el.textContent='请设置宝宝信息';}}
 function updateHeaderAge(){const el=document.getElementById('header-age');if(el&&DATA.baby.birthDate){const a=getAgeText(DATA.baby.birthDate);el.textContent='🐣 '+a;el.style.display='inline-block';}else if(el){el.style.display='none';}}
 
