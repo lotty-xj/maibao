@@ -639,8 +639,13 @@ async function syncPull(silent = false) {
     const resp = await fetch(SYNC_URL + '/data');
     if (!resp.ok) return;
     const { data, version } = await resp.json();
+    // NEVER accept empty data if we have local data
+    const serverCount = (data.feedingRecords||[]).length + (data.growthPhotos||[]).length + (data.poopRecords||[]).length;
+    if(serverCount === 0 && version <= 3) {
+      console.log('Server is empty/wiped, keeping local data');
+      return;
+    }
     if (version > SYNC_VERSION) {
-      // Server is source of truth - just take its data
       const local = getLocalData();
       const merged = { ...data,
         baby: { ...data.baby, currentMember: local.baby?.currentMember || '' },
