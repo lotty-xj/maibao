@@ -397,8 +397,41 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('');
   console.log('🐣  麦宝的成长日记 - 服务器已启动');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+  // One-time cleanup: remove duplicate photos
+  const data = readData();
+  if(data.growthPhotos && data.growthPhotos.length>0){
+    const seen=new Set();
+    const unique=data.growthPhotos.filter(p=>{
+      if(!p.id){p.id='photo_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);}
+      if(seen.has(p.id)) return false;
+      seen.add(p.id);return true;
+    });
+    if(unique.length !== data.growthPhotos.length){
+      console.log(`  📸 清理重复照片: ${data.growthPhotos.length} → ${unique.length} (删除${data.growthPhotos.length-unique.length}张)`);
+      data.growthPhotos=unique;
+      writeData(data,true);
+    }
+  }
+  // Also remove duplicates from other arrays
+  const recordArrays=['feedingRecords','poopRecords','supplementRecords','growthRecords','milestones'];
+  recordArrays.forEach(key=>{
+    if(data[key] && data[key].length>0){
+      const seen=new Set();
+      const unique=data[key].filter(r=>{
+        if(!r.id) return true;
+        if(seen.has(r.id)) return false;
+        seen.add(r.id);return true;
+      });
+      if(unique.length !== data[key].length){
+        console.log(`  🧹 ${key}: ${data[key].length} → ${unique.length}`);
+        data[key]=unique;
+      }
+    }
+  });
+  writeData(data,true);
+
   console.log(`  本地访问:  http://localhost:${PORT}`);
-  console.log(`  局域网访问:  http://<本机IP>:${PORT}`);
   console.log(`  数据文件:  ${DATA_FILE}`);
   console.log('  支持多人协作，数据实时同步');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
