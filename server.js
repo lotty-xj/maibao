@@ -128,10 +128,16 @@ app.post('/api/sync', (req, res) => {
     data.growthPhotos.push(...newPhotos);
   }
   
-  // Update baby/settings from client
+  // Update baby/settings/members from client (merge, don't replace)
   if(clientData.baby) data.baby = { ...data.baby, ...clientData.baby };
   if(clientData.settings) data.settings = { ...data.settings, ...clientData.settings };
   if(clientData.suppSettings) data.suppSettings = { ...(data.suppSettings||{}), ...clientData.suppSettings };
+  // Preserve members from both sides (merge by name)
+  if(clientData.members && clientData.members.length > 0) {
+    if(!data.members) data.members=[];
+    const existingNames = new Set(data.members.map(m=>m.name));
+    clientData.members.forEach(m=>{ if(!existingNames.has(m.name)) data.members.push(m); });
+  }
   
   writeData(data, true);
   broadcastUpdate();
