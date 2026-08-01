@@ -1363,7 +1363,7 @@ function addMilk() {
 }
 function saveMilk() {
   const r=document.getElementById('mr');const rec=document.getElementById('mt').value==='breastmilk'?'🤱母乳':'🍼配方';
-  DATA.feedingRecords.push({id:'feed_'+Date.now(),type:document.getElementById('mt').value,amount:document.getElementById('ma').value+'ml',date:document.getElementById('mdt').value.replace('T',' ')+':00',recordedBy:r.tagName==='SELECT'?r.value:r.value||'家长',notes:document.getElementById('mn').value});
+  DATA.feedingRecords.push({id:'feed_'+Date.now(),createdAt:Date.now(),type:document.getElementById('mt').value,amount:document.getElementById('ma').value+'ml',date:document.getElementById('mdt').value.replace('T',' ')+':00',recordedBy:r.tagName==='SELECT'?r.value:r.value||'家长',notes:document.getElementById('mn').value});
   saveLocal();closeModal();toast(rec+' 已保存');renderFeedingSub('milk');
 }
 function addSolids() {
