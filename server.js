@@ -98,37 +98,44 @@ app.get('/api/version', (req, res) => {
   res.json({ version: data._version, lastModified: data._lastModified });
 });
 
-// Full sync (client sends all data)
+// Full sync - ALWAYS preserve server data, only add new client records
 app.post('/api/sync', (req, res) => {
   const clientData = req.body;
   if (!clientData || !clientData.baby) {
     return res.json({ success: false, error: 'Invalid data' });
   }
   
-  const serverData = readData();
+  let data = readData();
   
-  // SMART MERGE: keep all unique records from both client and server
-  const merged = { ...serverData, ...clientData };
-  merged._version = (serverData._version || 0) + 1;
-  merged._activityLog = serverData._activityLog || [];
+  // Track existing IDs
+  const recordArrays = ['feedingRecords','poopRecords','supplementRecords','growthRecords','milestones',
+    'vaccineRecords','healthChecks','educationRecords'];
   
-  // For each array, merge unique entries by ID
-  ['feedingRecords','poopRecords','supplementRecords','growthRecords','milestones',
-   'vaccineRecords','healthChecks','educationRecords','growthPhotos'].forEach(key => {
-    const serverIds = new Set((serverData[key]||[]).map(r=>r.id));
-    const clientNew = (clientData[key]||[]).filter(r=>!serverIds.has(r.id));
-    merged[key] = [...(serverData[key]||[]), ...clientNew];
+  recordArrays.forEach(key => {
+    if(!data[key]) data[key]=[];
+    if(!clientData[key]) return;
+    const existingIds = new Set(data[key].map(r=>r.id));
+    // Only add records that don't already exist on server
+    const newRecords = clientData[key].filter(r=>!existingIds.has(r.id));
+    data[key].push(...newRecords);
   });
+
+  // For photos, use date+index as key
+  if(clientData.growthPhotos){
+    if(!data.growthPhotos) data.growthPhotos=[];
+    const existingKeys = new Set(data.growthPhotos.map(p=>p.date+'|'+p.note));
+    const newPhotos = clientData.growthPhotos.filter(p=>!existingKeys.has(p.date+'|'+(p.note||'')));
+    data.growthPhotos.push(...newPhotos);
+  }
   
-  // Preserve server's baby info and settings if client didn't provide them
-  merged.baby = { ...serverData.baby, ...clientData.baby };
-  merged.settings = { ...serverData.settings, ...(clientData.settings||{}) };
-  merged.suppSettings = { ...(serverData.suppSettings||{}), ...(clientData.suppSettings||{}) };
+  // Update baby/settings from client
+  if(clientData.baby) data.baby = { ...data.baby, ...clientData.baby };
+  if(clientData.settings) data.settings = { ...data.settings, ...clientData.settings };
+  if(clientData.suppSettings) data.suppSettings = { ...(data.suppSettings||{}), ...clientData.suppSettings };
   
-  writeData(merged, true);
+  writeData(data, true);
   broadcastUpdate();
-  
-  res.json({ success: true, version: merged._version, lastModified: merged._lastModified });
+  res.json({ success: true, version: data._version, lastModified: data._lastModified });
 });
 
 // Add feeding record
