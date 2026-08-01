@@ -1172,11 +1172,21 @@ function markSupp(type) {
 let currentFeedingDate = today();
 
 function renderFeeding() {
+  // Auto-reset to today on each visit
+  currentFeedingDate = today();
   const isToday = currentFeedingDate === today();
-  return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-    <span style="font-size:14px;font-weight:800">📅 查看日期：</span>
-    <input type="date" class="form-input" style="width:auto;padding:6px 10px;font-size:13px;min-height:36px" value="${currentFeedingDate}" onchange="changeFeedingDate(this.value)" id="feeding-date-picker">
-    ${!isToday?`<button class="btn btn-outline btn-xs" onclick="changeFeedingDate('${today()}')">📍 回到今天</button>`:''}
+  const d=new Date(currentFeedingDate);
+  const dateLabel = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+  return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:6px;background:#fff;border-radius:12px;padding:6px 14px;box-shadow:var(--shadow);cursor:pointer" onclick="document.getElementById('feeding-date-picker').showPicker()">
+      <span style="font-size:20px">📅</span>
+      <span style="font-size:14px;font-weight:800;color:var(--pink-dark)">${isToday?'今天':dateLabel}</span>
+      <span style="font-size:11px;color:var(--text-muted)">▼</span>
+    </div>
+    <input type="date" class="form-input" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0" value="${currentFeedingDate}" onchange="changeFeedingDate(this.value)" id="feeding-date-picker">
+    <button class="btn btn-ghost btn-xs" onclick="changeFeedingDate(prevDay('${currentFeedingDate}'))">◀ 前一天</button>
+    <button class="btn btn-ghost btn-xs" onclick="changeFeedingDate(nextDay('${currentFeedingDate}'))">后一天 ▶</button>
+    ${!isToday?`<button class="btn btn-primary btn-xs" onclick="changeFeedingDate('${today()}')">📍 回到今天</button>`:''}
   </div>
   <div class="tabs" id="feeding-tabs">
     <div class="tab active" data-sub="milk">🍼 奶量</div>
@@ -1186,9 +1196,11 @@ function renderFeeding() {
   </div><div id="feeding-content"></div>`;
 }
 
+function prevDay(d){const dt=new Date(d);dt.setDate(dt.getDate()-1);return formatDate(dt);}
+function nextDay(d){const dt=new Date(d);dt.setDate(dt.getDate()+1);return formatDate(dt);}
+
 function changeFeedingDate(date) {
   currentFeedingDate = date;
-  document.getElementById('feeding-date-picker').value = date;
   renderFeedingSub(currentFeedingSub);
 }
 
