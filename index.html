@@ -391,6 +391,7 @@ body{
   background:#fff;transition:border-color 0.2s;
 }
 .form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--pink)}
+.form-input[type="date"],.form-input[type="datetime-local"]{padding:10px 14px;min-height:42px}
 .form-textarea{resize:vertical;min-height:60px}
 .form-hint{font-size:11px;color:var(--text-muted);margin-top:4px}
 
@@ -560,6 +561,7 @@ body{
 
 <!-- Hidden file inputs for photo upload -->
 <input type="file" id="baby-photo-input" accept="image/*" style="display:none" onchange="handleBabyPhoto(event)">
+<input type="file" id="growth-photo-input" accept="image/*" capture="environment" style="display:none" onchange="handleGrowthPhoto(event)">
 
 <!-- Mobile Sidebar Overlay -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
@@ -1323,31 +1325,90 @@ function renderGrowth() {
   const whoM = Object.keys(wData).map(Number).sort((a,b)=>a-b);
   let cm = whoM[0]; for(const m of whoM){if(m<=ageMonths)cm=m;}
   const ww = wData[cm],wh = hData[cm];
-
   if(!DATA.healthChecks) DATA.healthChecks = CHILD_HEALTH_SCHEDULE.map(h=>({...h,id:'hc_'+Date.now()+Math.random(),completed:false}));
-  const upcoming = DATA.healthChecks.filter(h=>!h.completed).slice(0,5);
+  if(!DATA.growthPhotos) DATA.growthPhotos=[];
+
+  // Weight history for modal
+  const wHistory = recs.filter(r=>r.weight).sort((a,b)=>b.date.localeCompare(a.date));
 
   return `
+    <!-- Daily Photo -->
+    <div class="card card-pink" style="margin-bottom:16px">
+      <div class="card-header"><div class="card-title"><span class="icon">📸</span>每日成长照片</div></div>
+      <div style="display:flex;gap:10px;overflow-x:auto;padding:8px 0">
+        <div class="photo-avatar lg" style="width:80px;height:80px;flex-shrink:0;background:var(--pink-light);font-size:14px;color:var(--pink)" onclick="uploadGrowthPhoto()">
+          ＋<br>拍照
+        </div>
+        ${DATA.growthPhotos.slice(-10).reverse().map(p=>`
+          <div style="flex-shrink:0;text-align:center;cursor:pointer" onclick="viewPhoto('${p.data}')">
+            <img src="${p.data}" style="width:80px;height:80px;border-radius:12px;object-fit:cover;border:2px solid var(--pink-light)">
+            <div style="font-size:10px;color:var(--text-light);margin-top:2px">${p.date}</div>
+          </div>
+        `).join('')}
+        ${DATA.growthPhotos.length===0?'<div style="font-size:13px;color:var(--text-muted);padding:20px">点击＋拍照，记录宝宝每天的样子 📸</div>':''}
+      </div>
+      <input type="file" id="growth-photo-input" accept="image/*" capture="environment" style="display:none" onchange="handleGrowthPhoto(event)">
+    </div>
+
+    <!-- Weight & Height -->
     <div class="grid-2" style="margin-bottom:16px">
-      <div class="card card-pink"><div class="card-header"><div class="card-title"><span class="icon">⚖️</span>体重</div></div>
-        ${latest?`<div style="text-align:center;padding:12px 0"><div style="font-size:40px;font-weight:800;color:var(--pink-dark)">${latest.weight}<span style="font-size:16px">kg</span></div>
+      <div class="card card-pink" onclick="showWeightHistory()" style="cursor:pointer">
+        <div class="card-header"><div class="card-title"><span class="icon">⚖️</span>体重 <span style="font-size:10px;color:var(--text-muted);font-weight:400">点击看历史</span></div></div>
+        ${latest?.weight?`<div style="text-align:center;padding:12px 0"><div style="font-size:40px;font-weight:800;color:var(--pink-dark)">${latest.weight}<span style="font-size:16px">kg</span></div>
           <div style="font-size:12px;color:var(--text-light)">最近：${latest.date.split(' ')[0]} · 标准：${ww?ww[1]+'kg ('+ww[0]+'-'+ww[2]+'kg)':'-'}</div></div>`:'<div class="empty-state"><div class="es-icon">⚖️</div></div>'}
-        <div style="text-align:center"><button class="btn btn-primary btn-sm" onclick="addGrowth('weight')">记录体重</button></div></div>
-      <div class="card card-blue"><div class="card-header"><div class="card-title"><span class="icon">📏</span>身高</div></div>
-        ${latest?`<div style="text-align:center;padding:12px 0"><div style="font-size:40px;font-weight:800;color:var(--blue-dark)">${latest.height}<span style="font-size:16px">cm</span></div>
+        <div style="text-align:center"><button class="btn btn-primary btn-sm" onclick="event.stopPropagation();addGrowth('weight')">记录体重</button></div></div>
+      <div class="card card-blue">
+        <div class="card-header"><div class="card-title"><span class="icon">📏</span>身高</div></div>
+        ${latest?.height?`<div style="text-align:center;padding:12px 0"><div style="font-size:40px;font-weight:800;color:var(--blue-dark)">${latest.height}<span style="font-size:16px">cm</span></div>
           <div style="font-size:12px;color:var(--text-light)">最近：${latest.date.split(' ')[0]} · 标准：${wh?wh[1]+'cm ('+wh[0]+'-'+wh[2]+'cm)':'-'}</div></div>`:'<div class="empty-state"><div class="es-icon">📏</div></div>'}
         <div style="text-align:center"><button class="btn btn-outline btn-sm" onclick="addGrowth('height')">记录身高</button></div></div>
     </div>
+
     ${recs.length>=2?renderGrowthChart(recs,wData,hData,ageMonths):''}
+
     <div class="card card-green" style="margin-bottom:16px"><div class="card-header"><div class="card-title"><span class="icon">🏥</span>儿保检查</div><button class="btn btn-outline btn-sm" onclick="addHealth()">+ 添加</button></div>
-      ${DATA.healthChecks.map(h=>`<div class="tl-item"><div class="tl-dot ${h.completed?'done':'pending'}">${h.completed?'✓':'○'}</div><div class="tl-content"><div class="tl-title">${h.name}</div><div class="tl-date">建议：${h.age}${h.nextDate?' · 下次：'+h.nextDate:''}</div><div class="tl-desc">${h.desc||''}</div></div>
-        <div style="display:flex;gap:4px">${!h.completed?`<button class="btn btn-green btn-xs" onclick="markHealth('${h.id}')">完成</button>`:`<span class="tag tag-green">✅</span>`}<button class="btn btn-outline btn-xs" onclick="editHealth('${h.id}')">编辑</button></div></div>`).join('')}
+      ${DATA.healthChecks.map(h=>`<div class="tl-item"><div class="tl-dot ${h.completed?'done':'pending'}">${h.completed?'✓':'○'}</div><div class="tl-content"><div class="tl-title">${h.name}</div><div class="tl-date">建议：${h.age}${h.nextDate?' · 下次：'+h.nextDate:''}</div></div><div style="display:flex;gap:4px">${!h.completed?`<button class="btn btn-green btn-xs" onclick="markHealth('${h.id}')">完成</button>`:`<span class="tag tag-green">✅</span>`}<button class="btn btn-outline btn-xs" onclick="editHealth('${h.id}')">编辑</button></div></div>`).join('')}
     </div>
     <div class="card card-yellow"><div class="card-header"><div class="card-title"><span class="icon">🌟</span>成长里程碑</div><button class="btn btn-outline btn-sm" onclick="addMs()">+ 添加</button></div>
       ${!DATA.milestones||DATA.milestones.length===0?'<div class="empty-state"><div class="es-icon">🌟</div></div>':''}
       ${(DATA.milestones||[]).sort((a,b)=>b.date.localeCompare(a.date)).map(m=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0"><span style="font-size:20px">🌟</span><div style="flex:1"><div style="font-weight:700;font-size:13px">${m.name}</div><div style="font-size:11px;color:var(--text-light)">${m.date.split(' ')[0]}</div></div></div>`).join('')}
     </div>
   `;
+}
+
+function showWeightHistory() {
+  const recs = DATA.growthRecords.filter(r=>r.weight).sort((a,b)=>b.date.localeCompare(a.date));
+  if(recs.length===0){toast('暂无体重记录','info');return;}
+  const html = `<table style="width:100%;border-collapse:collapse">
+    <tr style="border-bottom:2px solid var(--pink-light)"><th style="padding:8px;text-align:left">日期</th><th style="padding:8px;text-align:right">体重</th><th style="padding:8px;text-align:right">变化</th></tr>
+    ${recs.map((r,i)=>{
+      const prev = i<recs.length-1?parseFloat(recs[i+1].weight):0;
+      const curr = parseFloat(r.weight);
+      const diff = prev>0?(curr-prev).toFixed(1):'-';
+      const color = diff>0?'var(--pink)':diff<0?'var(--green)':'var(--text-light)';
+      const arrow = diff>0?'↑':diff<0?'↓':'';
+      return `<tr style="border-bottom:1px solid rgba(0,0,0,0.04)"><td style="padding:8px">${r.date.split(' ')[0]}</td><td style="padding:8px;text-align:right;font-weight:700">${r.weight} kg</td><td style="padding:8px;text-align:right;color:${color}">${arrow} ${diff} kg</td></tr>`;
+    }).join('')}
+  </table>`;
+  showModal('⚖️ 体重历史记录',html);
+}
+
+function uploadGrowthPhoto() {
+  document.getElementById('growth-photo-input').click();
+}
+function handleGrowthPhoto(event) {
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    if(!DATA.growthPhotos) DATA.growthPhotos=[];
+    DATA.growthPhotos.push({date:today(),data:reader.result});
+    saveLocal(true);toast('✅ 照片已保存');renderPage('growth');
+  };
+  reader.readAsDataURL(file);
+}
+function viewPhoto(data) {
+  showModal('📸 成长照片',`<img src="${data}" style="width:100%;border-radius:8px">`);
 }
 
 function renderGrowthChart(recs,wData,hData,ageMonths) {
@@ -1372,7 +1433,15 @@ function renderGrowthChart(recs,wData,hData,ageMonths) {
         <line x1="${pl}" y1="${H-pb}" x2="${W-pr}" y2="${H-pb}" stroke="#ddd"/></svg></div></div>`;
 }
 
-function getAgeM(r) { if(!DATA.baby.birthDate)return 0;const b=new Date(DATA.baby.birthDate);const d=new Date(r.date);return(d.getFullYear()-b.getFullYear())*12+(d.getMonth()-b.getMonth()); }
+function getAgeM(r) { 
+  if(!DATA.baby.birthDate)return 0;
+  const b=new Date(DATA.baby.birthDate);
+  const d=new Date(r.date);
+  let months=(d.getFullYear()-b.getFullYear())*12+(d.getMonth()-b.getMonth());
+  // Fix: if record day < birth day, subtract 1 month (not yet a full month)
+  if(d.getDate()<b.getDate()) months--;
+  return Math.max(0,months);
+}
 function addGrowth(type) {
   const m=DATA.baby.currentMember||'家长',l=type==='weight'?'体重(kg)':'身高(cm)';
   showModal('记录'+l,`<div class="form-group"><label class="form-label">${l}</label><input class="form-input" type="number" id="gv" step="0.1"></div><div class="form-group"><label class="form-label">日期</label><input class="form-input" type="date" id="gd" value="${today()}"></div><div class="form-group"><label class="form-label">记录者</label><input class="form-input" id="gr" value="${m}"></div>`,
