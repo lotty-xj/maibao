@@ -585,7 +585,7 @@ body{
 
 <!-- Hidden file inputs for photo upload -->
 <input type="file" id="baby-photo-input" accept="image/*" style="display:none" onchange="handleBabyPhoto(event)">
-<input type="file" id="growth-photo-input" accept="image/*" capture="environment" style="display:none" onchange="handleGrowthPhoto(event)">
+<input type="file" id="growth-photo-input" accept="image/*" style="display:none" onchange="handleGrowthPhoto(event)">
 
 <!-- Mobile Sidebar Overlay -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
@@ -1470,7 +1470,7 @@ function renderGrowth() {
         `}).join('')}
         ${dayPhotos.length===0?`<div style="font-size:13px;color:var(--text-muted);padding:20px;flex-shrink:0">${isToday?'点击＋拍照，记录宝宝今天的样子 📸':'这天还没有照片'}</div>`:''}
       </div>
-      <input type="file" id="growth-photo-input" accept="image/*" capture="environment" style="display:none" onchange="handleGrowthPhoto(event)">
+      <input type="file" id="growth-photo-input" accept="image/*" style="display:none" onchange="handleGrowthPhoto(event)">
     </div>
 
     <!-- Weight Card -->
