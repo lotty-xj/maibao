@@ -658,36 +658,19 @@ async function syncPull(silent = false) {
 
 async function syncPush(notify = false) {
   if (!SYNC_ENABLED) return;
-  // CRITICAL: Always pull latest data first to avoid overwriting others' changes
+  // Pull latest version number first
   try {
-    const pullResp = await fetch(SYNC_URL + '/data', { signal: AbortSignal.timeout(5000) });
-    if(pullResp.ok){
-      const { data: serverData, version: serverVersion } = await pullResp.json();
-      if(serverVersion > SYNC_VERSION){
-        // Server has newer data - merge our local changes into it
-        const local = getLocalData();
-        // Keep all server's feeding/poop/supplement/growth records (they might be newer)
-        // Merge arrays: keep all unique entries from both
-        const merged = { ...serverData, _version: serverVersion };
-        // For each array, merge unique entries from local that don't exist on server
-        ['feedingRecords','poopRecords','supplementRecords','growthRecords','milestones',
-         'vaccineRecords','healthChecks','educationRecords','growthPhotos'].forEach(key => {
-          const serverIds = new Set((serverData[key]||[]).map(r=>r.id));
-          const localNew = (local[key]||[]).filter(r=>!serverIds.has(r.id));
-          merged[key] = [...(serverData[key]||[]), ...localNew];
-        });
-        // Preserve local preferences
-        merged.baby = { ...serverData.baby, ...local.baby };
-        merged.settings = { ...serverData.settings, ...local.settings };
-        merged.suppSettings = { ...(serverData.suppSettings||{}), ...(local.suppSettings||{}) };
-        localStorage.setItem('maibao_data', JSON.stringify(merged));
-        SYNC_VERSION = serverVersion;
-        refreshLocalData();
+    const vResp = await fetch(SYNC_URL + '/version', { signal: AbortSignal.timeout(3000) });
+    if(vResp.ok){
+      const { version } = await vResp.json();
+      if(version > SYNC_VERSION){
+        // Server has newer data - pull it first
+        await syncPull(true);
       }
     }
   } catch(e) {}
 
-  // Now push the merged data
+  // Now push our local data (server will merge safely)
   try {
     const data = getLocalData();
     const pushData = { ...data, baby: { ...data.baby, currentMember: '' } };
@@ -701,14 +684,12 @@ async function syncPush(notify = false) {
       const result = await resp.json();
       SYNC_VERSION = result.version;
       updateSyncUI(true);
-      if(notify) toast('✅ 已同步到云端', 'success');
+      if(notify) toast('✅ 已同步', 'success');
     } else {
       updateSyncUI(false);
-      if(notify) toast('⚠️ 同步失败', 'error');
     }
   } catch (e) {
     updateSyncUI(false);
-    if(notify) toast('⚠️ 网络异常，稍后重试', 'error');
   }
 }
 
