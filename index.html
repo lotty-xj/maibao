@@ -1650,15 +1650,15 @@ function getAgeM(r) {
   return Math.max(0,months);
 }
 function addGrowth(type) {
-  const m=DATA.baby.currentMember||'家长',l=type==='weight'?'体重(kg)':'身高(cm)';
-  showModal('记录'+l,`<div class="form-group"><label class="form-label">${l}</label><input class="form-input" type="number" id="gv" step="0.1"></div><div class="form-group"><label class="form-label">日期</label><input class="form-input" type="date" id="gd" value="${today()}"></div><div class="form-group"><label class="form-label">记录者</label><input class="form-input" id="gr" value="${m}"></div>`,
+  const l=type==='weight'?'体重(kg)':'身高(cm)';
+  showModal('记录'+l,`<div class="form-group"><label class="form-label">${l}</label><input class="form-input form-input-lg" type="number" id="gv" step="0.1" inputmode="decimal"></div><div class="form-group"><label class="form-label">日期</label><input class="form-input" type="date" id="gd" value="${today()}"></div><div class="form-group"><label class="form-label">记录者</label>${memberSelect('gr')}</div>`,
     `<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-primary btn-sm" onclick="saveGrowth('${type}')">保存</button>`);
 }
 function saveGrowth(type) {
   const v=document.getElementById('gv').value;if(!v){toast('请输入数值','error');return;}
-  const d=document.getElementById('gd').value;const r=document.getElementById('gr').value||'家长';
+  const d=document.getElementById('gd').value;const r=document.getElementById('gr');const recorder=r.tagName==='SELECT'?r.value:r.value||'家长';
   const ex=DATA.growthRecords.find(rr=>rr.date===d);
-  if(ex){if(type==='weight')ex.weight=v;else ex.height=v;}else{DATA.growthRecords.push({id:'growth_'+Date.now(),date:d,recordedBy:r,[type]:v});}
+  if(ex){if(type==='weight')ex.weight=v;else ex.height=v;ex.recordedBy=recorder;}else{DATA.growthRecords.push({id:'growth_'+Date.now(),date:d,recordedBy:recorder,[type]:v});}
   saveLocal();closeModal();toast('已保存');renderPage('growth');
 }
 function addMs() {
