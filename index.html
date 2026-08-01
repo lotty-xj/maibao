@@ -497,6 +497,22 @@ body{
 }
 .family-chip:hover{transform:scale(1.05)}
 
+/* Photo Avatar */
+.photo-avatar{
+  width:48px;height:48px;border-radius:50%;object-fit:cover;
+  border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  cursor:pointer;flex-shrink:0;transition:all 0.2s;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;background:var(--pink-light);
+}
+.photo-avatar:hover{transform:scale(1.1)}
+.photo-avatar.lg{width:72px;height:72px;font-size:36px}
+.photo-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.photo-upload-btn{
+  font-size:10px;color:var(--pink);font-weight:600;cursor:pointer;
+  text-align:center;margin-top:2px;
+}
+
 /* Chart SVG container */
 .chart-wrap{overflow-x:auto;margin-top:10px}
 .chart-wrap svg{max-width:100%;height:auto}
@@ -541,6 +557,9 @@ body{
     <div class="main-content" id="main-content"></div>
   </main>
 </div>
+
+<!-- Hidden file inputs for photo upload -->
+<input type="file" id="baby-photo-input" accept="image/*" style="display:none" onchange="handleBabyPhoto(event)">
 
 <!-- Mobile Sidebar Overlay -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
@@ -943,6 +962,11 @@ function now() {
   const d=new Date();
   return formatDate(d)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
 }
+function nowDT() {
+  // Returns proper datetime-local format: YYYY-MM-DDTHH:MM
+  const d=new Date();
+  return formatDate(d)+'T'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
 function today() { return formatDate(new Date()); }
 function getAgeMonths(birthDate) {
   if(!birthDate) return 0;
@@ -1232,7 +1256,7 @@ function addMilk() {
   const m = DATA.baby.currentMember||'家长';
   showModal('记录喂养',`<div class="form-group"><label class="form-label">类型</label><select class="form-select" id="mt"><option value="breastmilk">🤱 母乳</option><option value="formula">🍼 配方奶</option></select></div>
     <div class="form-group"><label class="form-label">奶量(ml)</label><input class="form-input" type="number" id="ma" value="120" step="10"></div>
-    <div class="form-group"><label class="form-label">时间</label><input class="form-input" type="datetime-local" id="mdt" value="${now().substring(0,16)}"></div>
+    <div class="form-group"><label class="form-label">时间</label><input class="form-input" type="datetime-local" id="mdt" value="${nowDT()}"></div>
     <div class="form-group"><label class="form-label">记录者</label><input class="form-input" id="mr" value="${m}"></div>
     <div class="form-group"><label class="form-label">备注</label><input class="form-input" id="mn" placeholder="选填"></div>`,
     `<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-primary btn-sm" onclick="saveMilk()">保存</button>`);
@@ -1245,7 +1269,7 @@ function addSolids() {
   const m = DATA.baby.currentMember||'家长';
   showModal('记录辅食',`<div class="form-group"><label class="form-label">食物</label><input class="form-input" id="sf" placeholder="如：高铁米粉"></div>
     <div class="form-group"><label class="form-label">分量</label><input class="form-input" id="sa" placeholder="如：2勺"></div>
-    <div class="form-group"><label class="form-label">时间</label><input class="form-input" type="datetime-local" id="sdt" value="${now().substring(0,16)}"></div>
+    <div class="form-group"><label class="form-label">时间</label><input class="form-input" type="datetime-local" id="sdt" value="${nowDT()}"></div>
     <div class="form-group"><label class="form-label">记录者</label><input class="form-input" id="sr" value="${m}"></div>`,
     `<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-orange btn-sm" onclick="saveSolids()">保存</button>`);
 }
@@ -1258,7 +1282,7 @@ function addPoop() {
   showModal('记录臭臭',`<div class="form-group"><label class="form-label">性状</label><select class="form-select" id="pq"><option value="正常">✅ 正常</option><option value="偏稀">💧 偏稀</option><option value="水样">🌊 水样</option><option value="偏干">🪨 偏干</option></select></div>
     <div class="form-group"><label class="form-label">颜色</label><select class="form-select" id="pc"><option value="黄色">🟡 黄色</option><option value="金黄色">🟠 金黄色</option><option value="绿色">🟢 绿色</option><option value="棕色">🟤 棕色</option></select></div>
     <div class="form-group"><label class="form-label">质地</label><input class="form-input" id="pt" placeholder="如：糊状"></div>
-    <div class="form-group"><label class="form-label">时间</label><input class="form-input" type="datetime-local" id="pdt" value="${now().substring(0,16)}"></div>
+    <div class="form-group"><label class="form-label">时间</label><input class="form-input" type="datetime-local" id="pdt" value="${nowDT()}"></div>
     <div class="form-group"><label class="form-label">记录者</label><input class="form-input" id="pr" value="${m}"></div>`,
     `<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-orange btn-sm" onclick="savePoop()">保存</button>`);
 }
@@ -1513,17 +1537,33 @@ function speakEnRate(text,rate){
 // ===================== FAMILY PAGE =====================
 function renderFamily() {
   const ms=DATA.members||[],cm=DATA.baby.currentMember||'';
-  const colors=['#FF6B8A','#5B9BD5','#3ECF8E','#FF8C42','#9B7ED8','#FF6F61','#26C6B7','#FFD23F'];
+  const colors=['#FF6B8A','#5B9BD5','#3ECF8E','#FF8C42','#9B7ED8','#FF6F61','#26C6B7'];
   return `
     <div class="card card-pink" style="margin-bottom:16px"><div class="card-header"><div class="card-title"><span class="icon">👨‍👩‍👧</span>家庭成员</div><button class="btn btn-primary btn-sm" onclick="addMember()">+ 添加</button></div>
-      ${ms.length===0?'<div class="empty-state"><div class="es-icon">👨‍👩‍👧</div></div>':''}
-      <div class="family-row" style="margin-bottom:12px">${ms.map((m,i)=>{const bg=colors[i%colors.length];return`<div class="family-chip" style="background:${bg};${m.name===cm?'box-shadow:0 4px 12px '+bg+'80;':''}" onclick="switchFam('${m.name}')">${m.emoji||'👤'} ${m.name}</div>`;}).join('')}</div>
+      ${ms.length===0?'<div class="empty-state"><div class="es-icon">👨‍👩‍👧</div><div class="es-text">点击右上角添加家人</div></div>':''}
+      <div class="family-row" style="margin-bottom:12px;align-items:center">${ms.map((m,i)=>{const bg=colors[i%colors.length];return`<div style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer" onclick="switchFam('${m.name}')">
+        <div class="photo-avatar${cm===m.name?' lg':''}" style="background:${bg};${cm===m.name?'box-shadow:0 0 0 3px '+bg+'40;':''}" onclick="event.stopPropagation();uploadMemberPhoto('${m.name}')">
+          ${m.photo?`<img src="${m.photo}" alt="${m.name}">`:m.emoji||'👤'}
+        </div>
+        <span style="font-size:11px;font-weight:700;color:${cm===m.name?bg:'var(--text)'}">${m.name}</span>
+        <span style="font-size:9px;color:var(--text-light)">${m.role}</span>
+      </div>`}).join('')}</div>
       ${ms.map((m,i)=>{const bg=colors[i%colors.length];const isCur=m.name===cm;return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.04)">
-        <div style="width:36px;height:36px;border-radius:50%;background:${bg};color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${m.emoji||'👤'}</div>
-        <div style="flex:1"><div style="font-weight:700;font-size:13px">${m.name} (${m.role}) ${isCur?'<span class="tag tag-pink">当前</span>':''}</div></div>
+        <div class="photo-avatar" style="background:${bg}" onclick="uploadMemberPhoto('${m.name}')">${m.photo?`<img src="${m.photo}">`:m.emoji||'👤'}</div>
+        <div style="flex:1"><div style="font-weight:700;font-size:13px">${m.name} (${m.role}) ${isCur?'<span class="tag tag-pink">当前</span>':''}</div><div class="photo-upload-btn" onclick="uploadMemberPhoto('${m.name}')">📷 更换头像</div></div>
         ${!isCur?`<button class="btn btn-outline btn-xs" onclick="switchFam('${m.name}')">切换</button>`:''}<button class="btn btn-ghost btn-xs" onclick="delMember('${m.name}')">删除</button></div>`}).join('')}
     </div>
-    <div class="card card-white"><div class="card-header"><div class="card-title"><span class="icon">👶</span>宝宝信息</div></div>
+
+    <div class="card card-white" style="margin-bottom:16px"><div class="card-header"><div class="card-title"><span class="icon">👶</span>宝宝信息</div></div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+        <div class="photo-avatar lg" style="width:80px;height:80px;font-size:40px;background:linear-gradient(135deg, #FFD23F, #FF8C42)" onclick="uploadBabyPhoto()">
+          ${DATA.baby.photo?`<img src="${DATA.baby.photo}" alt="${DATA.baby.name}">`:'🐣'}
+        </div>
+        <div style="flex:1">
+          <div style="font-weight:800;font-size:16px">${DATA.baby.name||'麦宝'}</div>
+          <div class="photo-upload-btn" onclick="uploadBabyPhoto()">📷 更换宝宝头像</div>
+        </div>
+      </div>
       <div class="form-group"><label class="form-label">名字</label><input class="form-input" id="bname" value="${DATA.baby.name||'麦宝'}" placeholder="宝宝的名字"></div>
       <div class="form-group"><label class="form-label">出生日期</label><input class="form-input" type="date" id="bbirth" value="${DATA.baby.birthDate||''}"></div>
       <div class="form-group"><label class="form-label">性别</label><select class="form-select" id="bgen"><option value="">请选择</option><option value="boy" ${DATA.baby.gender==='boy'?'selected':''}>👦 男宝</option><option value="girl" ${DATA.baby.gender==='girl'?'selected':''}>👧 女宝</option></select></div>
@@ -1532,6 +1572,47 @@ function renderFamily() {
     </div>
   `;
 }
+
+// Photo upload helpers
+function uploadMemberPhoto(name) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const member = DATA.members.find(m => m.name === name);
+      if (member) {
+        member.photo = reader.result;
+        saveLocal(true);
+        toast('✅ 头像已更新');
+        renderPage('family');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+function uploadBabyPhoto() {
+  document.getElementById('baby-photo-input').click();
+}
+
+function handleBabyPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    DATA.baby.photo = reader.result;
+    saveLocal(true);
+    toast('✅ 宝宝头像已更新');
+    renderPage('family');
+  };
+  reader.readAsDataURL(file);
+}
+
 function saveBabyInfo(){
   const name=document.getElementById('bname').value.trim();
   const birth=document.getElementById('bbirth').value;
@@ -1540,9 +1621,9 @@ function saveBabyInfo(){
   if(!birth){toast('请选择出生日期','error');return;}
   if(!gender){toast('请选择性别','error');return;}
   DATA.baby.name=name;DATA.baby.birthDate=birth;DATA.baby.gender=gender;
-  saveLocal(true);updateBabyDisp();toast('✅ 宝宝信息已保存！');
+  saveLocal(true);updateBabyDisp();updateHeaderAge();toast('✅ 宝宝信息已保存！');
 }
-function addMember(){showModal('添加家庭成员',`<div class="form-group"><label class="form-label">称呼</label><input class="form-input" id="mn2"></div><div class="form-group"><label class="form-label">关系</label><select class="form-select" id="mr2"><option value="妈妈">妈妈</option><option value="爸爸">爸爸</option><option value="爷爷">爷爷</option><option value="奶奶">奶奶</option><option value="外公">外公</option><option value="外婆">外婆</option></select></div><div class="form-group"><label class="form-label">表情</label><input class="form-input" id="me2" placeholder="如：👩" maxlength="2"></div>`,`<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-primary btn-sm" onclick="saveMember()">保存</button>`);}
+function addMember(){showModal('添加家庭成员',`<div class="form-group"><label class="form-label">称呼</label><input class="form-input" id="mn2"></div><div class="form-group"><label class="form-label">关系</label><select class="form-select" id="mr2"><option value="妈妈">妈妈</option><option value="爸爸">爸爸</option><option value="爷爷">爷爷</option><option value="奶奶">奶奶</option><option value="外公">外公</option><option value="外婆">外婆</option></select></div><div class="form-group"><label class="form-label">表情(选填)</label><input class="form-input" id="me2" placeholder="如：👩" maxlength="2"></div>`,`<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-primary btn-sm" onclick="saveMember()">保存</button>`);}
 function saveMember(){const n=document.getElementById('mn2').value;if(!n){toast('请输入称呼','error');return;}if(!DATA.members)DATA.members=[];if(DATA.members.find(m=>m.name===n)){toast('已存在','error');return;}DATA.members.push({name:n,role:document.getElementById('mr2').value,emoji:document.getElementById('me2').value||'👤'});if(!DATA.baby.currentMember)DATA.baby.currentMember=n;saveLocal();closeModal();updateSel();toast('已添加');renderPage('family');}
 function delMember(n){showConfirm('删除',`确认删除"${n}"？`,()=>{DATA.members=DATA.members.filter(m=>m.name!==n);if(DATA.baby.currentMember===n)DATA.baby.currentMember=DATA.members[0]?.name||'';saveLocal();updateSel();toast('已删除');renderPage('family');});}
 function switchFam(n){DATA.baby.currentMember=n;saveLocal();updateSel();toast('已切换为 '+n);renderPage('family');}
