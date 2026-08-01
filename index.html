@@ -659,19 +659,6 @@ async function syncPull(silent = false) {
 
 async function syncPush(notify = false) {
   if (!SYNC_ENABLED) return;
-  // Pull latest version number first
-  try {
-    const vResp = await fetch(SYNC_URL + '/version', { signal: AbortSignal.timeout(3000) });
-    if(vResp.ok){
-      const { version } = await vResp.json();
-      if(version > SYNC_VERSION){
-        // Server has newer data - pull it first
-        await syncPull(true);
-      }
-    }
-  } catch(e) {}
-
-  // Now push our local data (server will merge safely)
   try {
     const data = getLocalData();
     const pushData = { ...data, baby: { ...data.baby, currentMember: '' } };
@@ -683,7 +670,16 @@ async function syncPush(notify = false) {
     });
     if (resp.ok) {
       const result = await resp.json();
-      SYNC_VERSION = result.version;
+      // Server returns the FULL merged truth - replace local data with it
+      if(result.data){
+        const myName = localStorage.getItem('maibao_my_name') || '';
+        result.data.baby.currentMember = myName;
+        localStorage.setItem('maibao_data', JSON.stringify(result.data));
+        SYNC_VERSION = result.version;
+        refreshLocalData();
+        // Update UI silently
+        setTimeout(() => { if(!document.hidden) renderPage(currentPage); }, 200);
+      }
       updateSyncUI(true);
       if(notify) toast('✅ 已同步', 'success');
     } else {
