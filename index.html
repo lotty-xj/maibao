@@ -1174,9 +1174,14 @@ let currentFeedingDate = today();
 function renderFeeding() {
   currentFeedingDate = today();
   const isToday = currentFeedingDate === today();
+  const d=new Date(currentFeedingDate);
   return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-    ${isToday?'<span style="font-size:14px;font-weight:800;color:var(--pink-dark);background:var(--pink-light);padding:4px 12px;border-radius:10px">📅 今天</span>':''}
-    <input type="date" class="form-input" style="width:auto;padding:6px 10px;font-size:13px;min-height:36px;border:2px solid var(--pink);border-radius:10px;font-weight:700;color:var(--pink-dark)" value="${currentFeedingDate}" onchange="changeFeedingDate(this.value)" id="feeding-date-picker">
+    <button class="btn btn-ghost btn-xs" onclick="changeFeedingDate(prevDay(currentFeedingDate))" style="font-size:16px">◀</button>
+    <div style="display:flex;align-items:center;gap:0;background:#fff;border-radius:12px;padding:4px;box-shadow:var(--shadow);cursor:pointer" onclick="document.getElementById('feeding-date-picker').click()">
+      <span style="font-size:16px;font-weight:800;color:var(--pink-dark);padding:4px 10px">${isToday?'今天':`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`}</span>
+      <input type="date" class="form-input" style="position:absolute;opacity:0;pointer-events:none" value="${currentFeedingDate}" onchange="changeFeedingDate(this.value)" id="feeding-date-picker">
+    </div>
+    <button class="btn btn-ghost btn-xs" onclick="changeFeedingDate(nextDay(currentFeedingDate))" style="font-size:16px">▶</button>
     <button class="btn btn-ghost btn-xs" onclick="changeFeedingDate(prevDay(currentFeedingDate))">◀</button>
     <button class="btn btn-ghost btn-xs" onclick="changeFeedingDate(nextDay(currentFeedingDate))">▶</button>
     ${!isToday?`<button class="btn btn-primary btn-xs" onclick="changeFeedingDate(today())">📍 回到今天</button>`:''}
@@ -1406,8 +1411,12 @@ function renderGrowth() {
     <div class="card card-pink" style="margin-bottom:16px">
       <div class="card-header"><div class="card-title"><span class="icon">📸</span>每日成长照片</div></div>
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
-        ${isToday?'<span style="font-size:14px;font-weight:800;color:var(--pink-dark);background:var(--pink-light);padding:4px 12px;border-radius:10px">📸 今天</span>':''}
-        <input type="date" class="form-input" style="width:auto;padding:6px 10px;font-size:13px;min-height:36px;border:2px solid var(--pink);border-radius:10px;font-weight:700;color:var(--pink-dark)" value="${photoDate}" onchange="changeGrowthPhotoDate(this.value)" id="growth-date-picker">
+        <button class="btn btn-ghost btn-xs" onclick="changeGrowthPhotoDate(prevDay(photoDate))" style="font-size:16px">◀</button>
+        <div style="display:flex;align-items:center;background:#fff;border-radius:12px;padding:4px;box-shadow:var(--shadow);cursor:pointer" onclick="document.getElementById('growth-date-picker').click()">
+          <span style="font-size:16px;font-weight:800;color:var(--pink-dark);padding:4px 10px">${isToday?'今天':`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`}</span>
+          <input type="date" class="form-input" style="position:absolute;opacity:0;pointer-events:none" value="${photoDate}" onchange="changeGrowthPhotoDate(this.value)" id="growth-date-picker">
+        </div>
+        <button class="btn btn-ghost btn-xs" onclick="changeGrowthPhotoDate(nextDay(photoDate))" style="font-size:16px">▶</button>
         <button class="btn btn-ghost btn-xs" onclick="changeGrowthPhotoDate(prevDay(photoDate))">◀</button>
         <button class="btn btn-ghost btn-xs" onclick="changeGrowthPhotoDate(nextDay(photoDate))">▶</button>
         ${!isToday?`<button class="btn btn-primary btn-xs" onclick="changeGrowthPhotoDate(today())">📍 今天</button>`:''}
