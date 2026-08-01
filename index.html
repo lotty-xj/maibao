@@ -1176,15 +1176,10 @@ function renderFeeding() {
   const isToday = currentFeedingDate === today();
   const d=new Date(currentFeedingDate);
   return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-    <button class="btn btn-ghost btn-xs" onclick="changeFeedingDate(prevDay(currentFeedingDate))" style="font-size:16px">◀</button>
     <div style="display:flex;align-items:center;gap:0;background:#fff;border-radius:12px;padding:4px 8px;box-shadow:var(--shadow)">
-      <span style="font-size:16px;font-weight:800;color:var(--pink-dark);padding:4px 6px 4px 4px">${isToday?'今天':`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`}</span>
-      <input type="date" style="border:none;background:transparent;font-size:0;width:22px;height:32px;padding:0;cursor:pointer;color:transparent;appearance:none;-webkit-appearance:none" value="${currentFeedingDate}" onchange="changeFeedingDate(this.value)" id="feeding-date-picker">
+      <span style="font-size:16px;font-weight:800;color:var(--pink-dark);padding:4px 6px 4px 4px">${isToday?'📅 今天':`📅 ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`}</span>
+      <input type="date" style="border:none;background:transparent;font-size:0;width:22px;height:32px;padding:0;cursor:pointer;color:transparent" value="${currentFeedingDate}" onchange="changeFeedingDate(this.value)" id="feeding-date-picker">
     </div>
-    <button class="btn btn-ghost btn-xs" onclick="changeFeedingDate(nextDay(currentFeedingDate))" style="font-size:16px">▶</button>
-    <button class="btn btn-ghost btn-xs" onclick="changeFeedingDate(prevDay(currentFeedingDate))">◀</button>
-    <button class="btn btn-ghost btn-xs" onclick="changeFeedingDate(nextDay(currentFeedingDate))">▶</button>
-    ${!isToday?`<button class="btn btn-primary btn-xs" onclick="changeFeedingDate(today())">📍 回到今天</button>`:''}
   </div>
   <div class="tabs" id="feeding-tabs">
     <div class="tab active" data-sub="milk">🍼 奶量</div>
@@ -1420,14 +1415,10 @@ function renderGrowth() {
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
         <button class="btn btn-ghost btn-xs" onclick="changeGrowthPhotoDate(prevDay(photoDate))" style="font-size:16px">◀</button>
         <div style="display:flex;align-items:center;background:#fff;border-radius:12px;padding:4px 8px;box-shadow:var(--shadow)">
-          <span style="font-size:16px;font-weight:800;color:var(--pink-dark);padding:4px 6px 4px 4px">${isToday?'今天':`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`}</span>
-          <input type="date" style="border:none;background:transparent;font-size:0;width:22px;height:32px;padding:0;cursor:pointer;color:transparent;appearance:none;-webkit-appearance:none" value="${photoDate}" onchange="changeGrowthPhotoDate(this.value)" id="growth-date-picker">
+          <span style="font-size:16px;font-weight:800;color:var(--pink-dark);padding:4px 6px 4px 4px">${isToday?'📸 今天':`📸 ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`}</span>
+          <input type="date" style="border:none;background:transparent;font-size:0;width:22px;height:32px;padding:0;cursor:pointer;color:transparent" value="${photoDate}" onchange="changeGrowthPhotoDate(this.value)" id="growth-date-picker">
         </div>
-        <button class="btn btn-ghost btn-xs" onclick="changeGrowthPhotoDate(nextDay(photoDate))" style="font-size:16px">▶</button>
-        <button class="btn btn-ghost btn-xs" onclick="changeGrowthPhotoDate(prevDay(photoDate))">◀</button>
-        <button class="btn btn-ghost btn-xs" onclick="changeGrowthPhotoDate(nextDay(photoDate))">▶</button>
-        ${!isToday?`<button class="btn btn-primary btn-xs" onclick="changeGrowthPhotoDate(today())">📍 今天</button>`:''}
-        <span style="font-size:11px;color:var(--text-muted);margin-left:auto">${dayPhotos.length}张照片</span>
+        <span style="font-size:11px;color:var(--text-muted);margin-left:auto">${dayPhotos.length}张</span>
       </div>
       <div style="display:flex;gap:10px;overflow-x:auto;padding:8px 0;-webkit-overflow-scrolling:touch;scroll-behavior:smooth" id="growth-photo-row">
         <div class="photo-avatar lg" style="width:80px;height:80px;flex-shrink:0;background:var(--pink-light);font-size:14px;color:var(--pink)" onclick="uploadGrowthPhoto()">
