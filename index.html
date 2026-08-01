@@ -668,6 +668,8 @@ async function syncPush(notify = false) {
     const data = getLocalData();
     const pushData = { ...data, baby: { ...data.baby, currentMember: '' } };
     pushData._version = SYNC_VERSION;
+    updateSyncUI(false); // Show syncing
+    document.getElementById('sync-text').textContent = '同步中...';
     const resp = await fetch(SYNC_URL + '/sync', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(pushData),
@@ -675,25 +677,30 @@ async function syncPush(notify = false) {
     });
     if (resp.ok) {
       const result = await resp.json();
-      // Server returns the FULL merged truth - replace local data with it
       if(result.data){
         const myName = localStorage.getItem('maibao_my_name') || '';
         result.data.baby.currentMember = myName;
         localStorage.setItem('maibao_data', JSON.stringify(result.data));
         SYNC_VERSION = result.version;
         refreshLocalData();
-        // Update UI silently
         setTimeout(() => { if(!document.hidden) renderPage(currentPage); }, 200);
       }
       updateSyncUI(true);
-      if(notify) toast('✅ 已同步', 'success');
+      if(notify) toast('✅ 已同步 ('+data.feedingRecords.length+'条记录)', 'success');
     } else {
       updateSyncUI(false);
+      if(notify) toast('⚠️ 同步失败', 'error');
     }
   } catch (e) {
     updateSyncUI(false);
+    if(notify) toast('⚠️ 网络异常', 'error');
   }
 }
+
+// Sync when app becomes visible
+document.addEventListener('visibilitychange', () => {
+  if(!document.hidden) syncCheck();
+});
 
 function syncAfterChange() {
   clearTimeout(SYNC_TIMER);
