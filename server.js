@@ -11,44 +11,133 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(__dirname));
 
-// Read data
+// ========== GitHub-backed Persistent Storage ==========
+// Token must be set as RAILWAY_GITHUB_TOKEN env var on Railway
+const GITHUB_TOKEN = process.env.RAILWAY_GITHUB_TOKEN || '';
+const GITHUB_REPO = 'lotty-xj/maibao';
+const GITHUB_FILE = 'data.json';
+const GITHUB_API = 'https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + GITHUB_FILE;
+const USE_GITHUB = !!GITHUB_TOKEN;
+
+let cachedData = null;
+let cachedSha = null;
+let lastFetch = 0;
+
+function gitHubHeaders() {
+  return {
+    'Authorization': 'token ' + GITHUB_TOKEN,
+    'User-Agent': 'maibao-server',
+    'Accept': 'application/vnd.github.v3+json'
+  };
+}
+
+// Read data from GitHub (with 5-second local cache)
 function readData() {
+  const now = Date.now();
+  if (cachedData && (now - lastFetch) < 5000) return cachedData;
+  
+  // Also try local file for fast startup
   try {
     if (fs.existsSync(DATA_FILE)) {
       const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-      return JSON.parse(raw);
+      const localData = JSON.parse(raw);
+      if ((localData.feedingRecords||[]).length > 0 || (localData.growthPhotos||[]).length > 0) {
+        cachedData = localData;
+        lastFetch = now;
+        return cachedData;
+      }
     }
-  } catch (e) {
-    console.error('Error reading data:', e.message);
-  }
+  } catch(e) {}
+  
   return getDefaultData();
 }
 
-// Write data with backup
+// Fetch latest from GitHub (async)
+async function fetchFromGitHub() {
+  return new Promise((resolve) => {
+    const options = { hostname: 'api.github.com', path: '/repos/' + GITHUB_REPO + '/contents/' + GITHUB_FILE, headers: gitHubHeaders() };
+    const req = require('https').get(options, (res) => {
+      let body = '';
+      res.on('data', c => body += c);
+      res.on('end', () => {
+        try {
+          const fileData = JSON.parse(body);
+          if (fileData.content && fileData.sha) {
+            const decoded = Buffer.from(fileData.content, 'base64').toString('utf-8');
+            const data = JSON.parse(decoded);
+            cachedData = data;
+            cachedSha = fileData.sha;
+            lastFetch = Date.now();
+            // Also save locally
+            fs.writeFileSync(DATA_FILE, decoded);
+            console.log('  📥 从GitHub恢复数据: ' + (data.feedingRecords||[]).length + '条记录');
+            resolve(data);
+            return;
+          }
+        } catch(e) {}
+        resolve(null);
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.end();
+  });
+}
+
+// Write data to GitHub and locally
 function writeData(data, immediate = false) {
   data._lastModified = new Date().toISOString();
   data._version = (data._version || 0) + 1;
   
-  const doWrite = () => {
-    try {
-      // Create backup before writing
-      if(fs.existsSync(DATA_FILE)){
-        const size=fs.statSync(DATA_FILE).size;
-        if(size>100) fs.writeFileSync(DATA_FILE+'.backup', fs.readFileSync(DATA_FILE));
-      }
-      fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
-    } catch (e) {
-      console.error('Error writing data:', e.message);
-    }
-  };
+  cachedData = data;
+  lastFetch = Date.now();
   
-  if (immediate) {
-    clearTimeout(writeTimeout);
-    doWrite();
-  } else {
-    clearTimeout(writeTimeout);
-    writeTimeout = setTimeout(doWrite, 300);
+  // Always write locally
+  try { fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8'); } catch(e) {}
+  
+  // Debounce GitHub writes
+  if (!writeData._timer) {
+    writeData._timer = setTimeout(() => pushToGitHub(), immediate ? 100 : 2000);
+    writeData._dirty = true;
+  } else if (immediate) {
+    clearTimeout(writeData._timer);
+    writeData._timer = setTimeout(() => pushToGitHub(), 100);
+    writeData._dirty = true;
   }
+}
+
+async function pushToGitHub() {
+  writeData._timer = null;
+  writeData._dirty = false;
+  if (!cachedData) return;
+  
+  const content = Buffer.from(JSON.stringify(cachedData, null, 2)).toString('base64');
+  const body = JSON.stringify({
+    message: 'Auto-sync data ' + new Date().toISOString().substring(0, 19),
+    content: content,
+    ...(cachedSha ? { sha: cachedSha } : {})
+  });
+  
+  return new Promise((resolve) => {
+    const options = {
+      hostname: 'api.github.com', path: '/repos/' + GITHUB_REPO + '/contents/' + GITHUB_FILE,
+      method: 'PUT', headers: { ...gitHubHeaders(), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+    };
+    const req = require('https').request(options, (res) => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => {
+        try {
+          const r = JSON.parse(d);
+          if (r.content && r.content.sha) cachedSha = r.content.sha;
+          console.log('  💾 GitHub保存 ' + (res.statusCode < 300 ? '成功' : '失败:' + res.statusCode));
+        } catch(e) {}
+        resolve();
+      });
+    });
+    req.on('error', (e) => { console.log('  💾 GitHub保存失败: ' + e.message); resolve(); });
+    req.write(body);
+    req.end();
+  });
 }
 
 function getDefaultData() {
@@ -397,33 +486,22 @@ app.get('/api/health-check', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
   console.log('');
   console.log('🐣  麦宝的成长日记 - 服务器已启动');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-  // Safe cleanup: only run if data exists and has records
-  const data = readData();
-  const totalRecords = (data.feedingRecords||[]).length + (data.growthPhotos||[]).length + (data.poopRecords||[]).length;
-  if(totalRecords > 0){
-    let cleaned = false;
-    if(data.growthPhotos && data.growthPhotos.length>0){
-      const seen=new Set();
-      const unique=data.growthPhotos.filter(p=>{
-        if(!p.id){p.id='photo_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);}
-        if(seen.has(p.id)){cleaned=true;return false;}
-        seen.add(p.id);return true;
-      });
-      if(cleaned){console.log(`  📸 清理照片: ${data.growthPhotos.length}→${unique.length}`);data.growthPhotos=unique;}
+  
+  if (USE_GITHUB) {
+    console.log('  🔍 正在从GitHub恢复数据...');
+    const ghData = await fetchFromGitHub();
+    if (ghData) {
+      console.log('  ✅ 已恢复: ' + (ghData.feedingRecords||[]).length + '条喂养, ' + (ghData.members||[]).length + '个家人');
+    } else {
+      console.log('  ⚠️  GitHub暂无数据');
     }
-    ['feedingRecords','poopRecords','supplementRecords'].forEach(key=>{
-      if(data[key] && data[key].length>0){
-        const seen=new Set();let dup=0;
-        const unique=data[key].filter(r=>{if(!r.id||seen.has(r.id)){dup++;return !!r.id&&!seen.has(r.id);}seen.add(r.id);return true;});
-        if(dup>0){console.log(`  🧹 ${key}: 删除${dup}条重复`);data[key]=unique;}
-      }
-    });
-    if(cleaned) writeData(data,true);
+  } else {
+    console.log('  ⚠️  未配置GitHub备份（设置RAILWAY_GITHUB_TOKEN环境变量）');
+    console.log('  💡 数据仅保存在本地，Railway重启会丢失');
   }
 
   console.log(`  本地访问:  http://localhost:${PORT}`);
