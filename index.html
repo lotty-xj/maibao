@@ -1001,15 +1001,22 @@ function getAgeMonths(birthDate) {
 function getMonthLabel(m) { return m<12?m+'个月':Math.floor(m/12)+'岁'+(m%12>0?m%12+'个月':''); }
 function getAgeDetail(birthDate) {
   if(!birthDate) return {months:0,days:0};
-  const b=new Date(birthDate);const n=new Date();
-  // Calculate exact age
+  const b=new Date(birthDate);
+  // Apply birth time if available
+  if(DATA.baby.birthTime){
+    const [h,m]=DATA.baby.birthTime.split(':').map(Number);
+    b.setHours(h||0,m||0,0,0);
+  }
+  const n=new Date();
   let years=n.getFullYear()-b.getFullYear();
   let months=n.getMonth()-b.getMonth();
   let days=n.getDate()-b.getDate();
+  let hours=n.getHours()-b.getHours();
+  if(hours<0||(hours===0&&n.getMinutes()<b.getMinutes())) days--;
   if(days<0){months--;const prevMonth=new Date(n.getFullYear(),n.getMonth(),0);days+=prevMonth.getDate();}
   if(months<0){years--;months+=12;}
   const totalMonths=years*12+months;
-  return {months:totalMonths,days};
+  return {months:totalMonths,days:Math.max(0,days)};
 }
 function getAgeText(birthDate) {
   const {months,days}=getAgeDetail(birthDate);
@@ -1674,7 +1681,13 @@ function renderFamily() {
         </div>
       </div>
       <div class="form-group"><label class="form-label">名字</label><input class="form-input" id="bname" value="${DATA.baby.name||'麦宝'}" placeholder="宝宝的名字"></div>
-      <div class="form-group"><label class="form-label">出生日期</label><input class="form-input" type="date" id="bbirth" value="${DATA.baby.birthDate||''}"></div>
+      <div class="form-group"><label class="form-label">出生日期</label>
+        <div style="display:flex;gap:8px">
+          <input class="form-input" type="date" id="bbirth" value="${DATA.baby.birthDate||''}" style="flex:2">
+          <input class="form-input" type="time" id="bbirth-time" value="${DATA.baby.birthTime||'08:00'}" style="flex:1">
+        </div>
+        <div class="form-hint">精确到分钟，年龄计算更准确</div>
+      </div>
       <div class="form-group"><label class="form-label">性别</label><select class="form-select" id="bgen"><option value="">请选择</option><option value="boy" ${DATA.baby.gender==='boy'?'selected':''}>👦 男宝</option><option value="girl" ${DATA.baby.gender==='girl'?'selected':''}>👧 女宝</option></select></div>
       <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveBabyInfo()">💾 保存宝宝信息</button>
       <div class="form-hint" style="margin-top:6px">⚠️ 请务必先设置宝宝信息，其他功能才能正常使用</div>
@@ -1752,11 +1765,12 @@ function handleGrowthPhoto(event) {
 function saveBabyInfo(){
   const name=document.getElementById('bname').value.trim();
   const birth=document.getElementById('bbirth').value;
+  const birthTime=document.getElementById('bbirth-time').value||'08:00';
   const gender=document.getElementById('bgen').value;
   if(!name){toast('请输入宝宝名字','error');return;}
   if(!birth){toast('请选择出生日期','error');return;}
   if(!gender){toast('请选择性别','error');return;}
-  DATA.baby.name=name;DATA.baby.birthDate=birth;DATA.baby.gender=gender;
+  DATA.baby.name=name;DATA.baby.birthDate=birth;DATA.baby.birthTime=birthTime;DATA.baby.gender=gender;
   saveLocal(true);updateBabyDisp();updateHeaderAge();toast('✅ 宝宝信息已保存！');
 }
 function addMember(){showModal('添加家庭成员',`<div class="form-group"><label class="form-label">称呼</label><input class="form-input" id="mn2"></div><div class="form-group"><label class="form-label">关系</label><select class="form-select" id="mr2"><option value="妈妈">妈妈</option><option value="爸爸">爸爸</option><option value="爷爷">爷爷</option><option value="奶奶">奶奶</option><option value="外公">外公</option><option value="外婆">外婆</option></select></div><div class="form-group"><label class="form-label">表情(选填)</label><input class="form-input" id="me2" placeholder="如：👩" maxlength="2"></div>`,`<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-primary btn-sm" onclick="saveMember()">保存</button>`);}
