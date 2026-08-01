@@ -1158,8 +1158,12 @@ function getTodaySupplement() {
   let todayShould = 'AD';
   if(adD3.length>0) todayShould = adD3[adD3.length-1].type==='AD'?'D3':'AD';
   if(takenTypes.includes(todayShould)) return null;
-  const name = todayShould==='AD'?'维生素AD':'维生素D3';
-  const note = todayShould==='AD'?'今天该吃AD，明天换D3' : '今天该吃D3，明天换AD';
+  const s = DATA.suppSettings||{};
+  const adName = s.adName||'维生素AD';
+  const d3Name = s.d3Name||'维生素D3';
+  const name = todayShould==='AD'?adName:d3Name;
+  const altNote = s.altNote||'';
+  const note = altNote || (todayShould==='AD'?'今天该吃AD，明天换D3' : '今天该吃D3，明天换AD');
   return {type:todayShould,name,note};
 }
 
@@ -1185,9 +1189,9 @@ function renderFeeding() {
   </div>
   <div class="tabs" id="feeding-tabs">
     <div class="tab active" data-sub="milk">🍼 奶量</div>
-    <div class="tab" data-sub="solids">🥄 辅食</div>
     <div class="tab" data-sub="poop">💩 臭臭</div>
     <div class="tab" data-sub="supplement">💊 补剂</div>
+    <div class="tab" data-sub="solids">🥄 辅食</div>
   </div><div id="feeding-content"></div>`;
 }
 
@@ -1209,9 +1213,9 @@ function changeFeedingDate(date) {
 function renderFeedingContent(sub) {
   switch(sub) {
     case 'milk': return renderMilkTab();
-    case 'solids': return renderSolidsTab();
     case 'poop': return renderPoopTab();
     case 'supplement': return renderSupplementTab();
+    case 'solids': return renderSolidsTab();
     default: return renderMilkTab();
   }
 }
@@ -1294,8 +1298,27 @@ function renderSupplementTab() {
   const ts = isToday ? getTodaySupplement() : null;
   const todayRecs = DATA.supplementRecords.filter(r=>r.date.startsWith(t));
   const allTypes = [...new Set(DATA.supplementRecords.map(r=>r.type))];
-  let html = ts ? `<div class="supp-reminder"><div class="sr-icon">💊</div><div class="sr-text"><div class="sr-title">今日补剂：${ts.name}</div><div class="sr-detail">${ts.note}</div></div><button class="btn btn-primary btn-sm" onclick="markSupp('${ts.type}');setTimeout(()=>renderFeedingSub('supplement'),300)">标记已吃</button></div>` : '';
+
+  if(!DATA.suppSettings) DATA.suppSettings = {};
+  // Editable AD/D3 names
+  const adName = DATA.suppSettings.adName || '维生素AD';
+  const d3Name = DATA.suppSettings.d3Name || '维生素D3';
+  const altNote = DATA.suppSettings.altNote || '';
+
+  let html = ts ? `<div class="supp-reminder">
+    <div class="sr-icon">💊</div>
+    <div class="sr-text">
+      <div class="sr-title">今日补剂：<span contenteditable="true" onblur="saveSuppSetting('${ts.type}Name',this.textContent)" style="border-bottom:1px dashed var(--purple);outline:none;min-width:60px;display:inline-block">${ts.name}</span></div>
+      <div class="sr-detail" style="display:flex;align-items:center;gap:4px">
+        <span contenteditable="true" onblur="saveSuppSetting('altNote',this.textContent)" style="border-bottom:1px dashed var(--text-muted);outline:none;min-width:100px;display:inline-block">${ts.note}</span>
+        <span style="font-size:10px;color:var(--text-muted)">✎ 点击编辑</span>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="markSupp('${ts.type}');setTimeout(()=>renderFeedingSub('supplement'),300)">标记已吃</button>
+  </div>` : '';
+
   html += `<div class="card card-purple"><div class="card-header"><div class="card-title"><span class="icon">💊</span>补剂管理</div><button class="btn btn-primary btn-sm" onclick="addSuppForm()">+ 添加</button></div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">AD/D3命名：<span contenteditable="true" onblur="saveSuppSetting('adName',this.textContent)" style="border-bottom:1px dashed var(--purple);outline:none">${adName}</span> / <span contenteditable="true" onblur="saveSuppSetting('d3Name',this.textContent)" style="border-bottom:1px dashed var(--purple);outline:none">${d3Name}</span></div>
     ${allTypes.length===0?'<div class="empty-state"><div class="es-icon">💊</div><div class="es-text">还没有添加补剂</div></div>':''}
     ${allTypes.map(tp=>{const recs=DATA.supplementRecords.filter(r=>r.type===tp);const taken=todayRecs.some(r=>r.type===tp);
       return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.04)">
@@ -1304,6 +1327,12 @@ function renderSupplementTab() {
         <button class="btn btn-ghost btn-xs" onclick="delSuppType('${tp}')">删除</button></div>`}).join('')}
   </div>`;
   return html;
+}
+
+function saveSuppSetting(key, value) {
+  if(!DATA.suppSettings) DATA.suppSettings = {};
+  DATA.suppSettings[key] = value.trim();
+  saveLocal();
 }
 
 function renderFeedHistory(type) {
