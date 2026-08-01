@@ -450,13 +450,40 @@ body{
 @media(max-width:768px){
   .sidebar{position:fixed;left:-260px;top:0;bottom:0;width:260px;min-width:260px;z-index:50}
   .sidebar.open{transform:translateX(260px)}
-  .main-content{padding:12px}
+  .main-content{padding:12px;padding-bottom:80px}
   .main-header{padding:0 12px}
   .stat-blocks{flex-direction:column}
   .stat-block{min-width:100%}
   .checkin-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+  .bottom-nav{display:flex!important}
+  .mobile-btn{display:block!important}
 }
-@media(min-width:769px){.mobile-btn{display:none!important}}
+@media(min-width:769px){
+  .mobile-btn{display:none!important}
+  .bottom-nav{display:none!important}
+}
+
+/* Mobile Bottom Navigation */
+.bottom-nav{
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:60;
+  background:#fff;border-top:1px solid var(--border);
+  padding:6px 0 env(safe-area-inset-bottom,0);
+  box-shadow:0 -2px 16px rgba(0,0,0,0.06);
+}
+.bottom-nav .bn-items{display:flex;justify-content:space-around}
+.bottom-nav .bn-item{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:4px 8px;cursor:pointer;font-size:10px;font-weight:600;
+  color:var(--text-light);transition:color 0.2s;min-width:48px;
+}
+.bottom-nav .bn-item.active{color:var(--pink)}
+.bottom-nav .bn-item .bn-icon{font-size:20px}
+
+/* Mobile sidebar overlay */
+.sidebar-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:45;
+}
+@media(max-width:768px){.sidebar-overlay.show{display:block}}
 
 .mobile-btn{
   background:none;border:none;font-size:22px;cursor:pointer;color:var(--text);padding:4px;
@@ -513,6 +540,20 @@ body{
     <div class="main-content" id="main-content"></div>
   </main>
 </div>
+
+<!-- Mobile Sidebar Overlay -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Mobile Bottom Navigation -->
+<nav class="bottom-nav" id="bottom-nav">
+  <div class="bn-items">
+    <div class="bn-item active" data-page="home" onclick="navigateTo('home')"><span class="bn-icon">🏠</span>首页</div>
+    <div class="bn-item" data-page="feeding" onclick="navigateTo('feeding')"><span class="bn-icon">🍼</span>喂养</div>
+    <div class="bn-item" data-page="growth" onclick="navigateTo('growth')"><span class="bn-icon">📏</span>成长</div>
+    <div class="bn-item" data-page="education" onclick="navigateTo('education')"><span class="bn-icon">🎨</span>早教</div>
+    <div class="bn-item" data-page="family" onclick="navigateTo('family')"><span class="bn-icon">👨‍👩‍👧</span>家人</div>
+  </div>
+</nav>
 
 <!-- Modal -->
 <div class="modal-overlay" id="modal-overlay"><div class="modal" id="modal"></div></div>
@@ -939,13 +980,27 @@ let currentPage = 'home';
 
 function navigateTo(page) {
   currentPage = page;
+  // Update sidebar nav
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
+  // Update bottom nav
+  document.querySelectorAll('.bn-item').forEach(el=>el.classList.remove('active'));
+  document.querySelector(`.bn-item[data-page="${page}"]`)?.classList.add('active');
   const titles={home:'首页',feeding:'喂养记录',growth:'成长记录',vaccine:'疫苗接种',education:'早教中心',bilingual:'双语学习',family:'家庭成员'};
   document.getElementById('page-title').textContent = titles[page]||'';
+  // Auto-close sidebar on mobile
+  if(window.innerWidth<=768){
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('show');
+  }
   renderPage(page);
 }
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function toggleSidebar() {
+  const sb=document.getElementById('sidebar');
+  const ov=document.getElementById('sidebar-overlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('show');
+}
 
 function renderPage(page) {
   const c = document.getElementById('main-content');
@@ -1449,13 +1504,23 @@ function renderFamily() {
         ${!isCur?`<button class="btn btn-outline btn-xs" onclick="switchFam('${m.name}')">切换</button>`:''}<button class="btn btn-ghost btn-xs" onclick="delMember('${m.name}')">删除</button></div>`}).join('')}
     </div>
     <div class="card card-white"><div class="card-header"><div class="card-title"><span class="icon">👶</span>宝宝信息</div></div>
-      <div class="form-group"><label class="form-label">名字</label><input class="form-input" id="bname" value="${DATA.baby.name||'麦宝'}" onchange="updateBaby()"></div>
-      <div class="form-group"><label class="form-label">出生日期</label><input class="form-input" type="date" id="bbirth" value="${DATA.baby.birthDate||''}" onchange="updateBaby()"></div>
-      <div class="form-group"><label class="form-label">性别</label><select class="form-select" id="bgen" onchange="updateBaby()"><option value="">选择</option><option value="boy" ${DATA.baby.gender==='boy'?'selected':''}>👦 男宝</option><option value="girl" ${DATA.baby.gender==='girl'?'selected':''}>👧 女宝</option></select></div>
+      <div class="form-group"><label class="form-label">名字</label><input class="form-input" id="bname" value="${DATA.baby.name||'麦宝'}" placeholder="宝宝的名字"></div>
+      <div class="form-group"><label class="form-label">出生日期</label><input class="form-input" type="date" id="bbirth" value="${DATA.baby.birthDate||''}"></div>
+      <div class="form-group"><label class="form-label">性别</label><select class="form-select" id="bgen"><option value="">请选择</option><option value="boy" ${DATA.baby.gender==='boy'?'selected':''}>👦 男宝</option><option value="girl" ${DATA.baby.gender==='girl'?'selected':''}>👧 女宝</option></select></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveBabyInfo()">💾 保存宝宝信息</button>
+      <div class="form-hint" style="margin-top:6px">⚠️ 请务必先设置宝宝信息，其他功能才能正常使用</div>
     </div>
   `;
 }
-function updateBaby(){DATA.baby.name=document.getElementById('bname').value||'麦宝';DATA.baby.birthDate=document.getElementById('bbirth').value;DATA.baby.gender=document.getElementById('bgen').value;saveLocal();updateBabyDisp();toast('已更新');}
+function saveBabyInfo(){
+  const name=document.getElementById('bname').value.trim();
+  const birth=document.getElementById('bbirth').value;
+  const gender=document.getElementById('bgen').value;
+  if(!name){toast('请输入宝宝名字','error');return;}
+  if(!birth){toast('请选择出生日期','error');return;}
+  if(!gender){toast('请选择性别','error');return;}
+  DATA.baby.name=name;DATA.baby.birthDate=birth;DATA.baby.gender=gender;
+  saveLocal(true);updateBabyDisp();toast('✅ 宝宝信息已保存！');
 function addMember(){showModal('添加家庭成员',`<div class="form-group"><label class="form-label">称呼</label><input class="form-input" id="mn2"></div><div class="form-group"><label class="form-label">关系</label><select class="form-select" id="mr2"><option value="妈妈">妈妈</option><option value="爸爸">爸爸</option><option value="爷爷">爷爷</option><option value="奶奶">奶奶</option><option value="外公">外公</option><option value="外婆">外婆</option></select></div><div class="form-group"><label class="form-label">表情</label><input class="form-input" id="me2" placeholder="如：👩" maxlength="2"></div>`,`<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-primary btn-sm" onclick="saveMember()">保存</button>`);}
 function saveMember(){const n=document.getElementById('mn2').value;if(!n){toast('请输入称呼','error');return;}if(!DATA.members)DATA.members=[];if(DATA.members.find(m=>m.name===n)){toast('已存在','error');return;}DATA.members.push({name:n,role:document.getElementById('mr2').value,emoji:document.getElementById('me2').value||'👤'});if(!DATA.baby.currentMember)DATA.baby.currentMember=n;saveLocal();closeModal();updateSel();toast('已添加');renderPage('family');}
 function delMember(n){showConfirm('删除',`确认删除"${n}"？`,()=>{DATA.members=DATA.members.filter(m=>m.name!==n);if(DATA.baby.currentMember===n)DATA.baby.currentMember=DATA.members[0]?.name||'';saveLocal();updateSel();toast('已删除');renderPage('family');});}
