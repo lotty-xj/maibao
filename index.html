@@ -1768,8 +1768,11 @@ function renderEducation() {
     <div style="margin-bottom:16px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="font-size:16px;font-weight:800">🎬 今日早教推荐</span><span class="date-badge">📅 ${t}</span><span style="font-size:11px;color:var(--text-muted)">每天自动更新</span></div>
       <div class="daily-grid">
         ${dv?`<div class="video-block"><div class="vb-header"><span class="vb-icon">${dv.icon||'🎬'}</span><div class="vb-info"><div class="vb-title">${dv.title}</div><div class="vb-desc">${dv.desc}</div></div></div>
-          <div class="vb-wrapper"><iframe src="//player.bilibili.com/player.html?bvid=${dv.bvid}&page=1&autoplay=0&danmaku=0&high_quality=1" allowfullscreen loading="lazy"></iframe></div>
-          <div class="vb-footer">🏷️ ${(dv.tags||[]).map(t=>'<span class="tag tag-pink">'+t+'</span>').join(' ')}</div></div>`:''}
+          <div class="vb-wrapper"><iframe src="https://player.bilibili.com/player.html?bvid=${dv.bvid}&page=1&autoplay=0&danmaku=0&high_quality=1" allowfullscreen loading="lazy" allow="autoplay;encrypted-media"></iframe></div>
+          <div class="vb-footer">
+            🏷️ ${(dv.tags||[]).map(t=>'<span class="tag tag-pink">'+t+'</span>').join(' ')}
+            <a href="https://www.bilibili.com/video/${dv.bvid}" target="_blank" style="color:var(--blue);font-size:11px;margin-left:8px">📺 打不开？点此在新窗口播放</a>
+          </div></div>`:''}
         ${dr?`<div><div class="audio-bar"><div class="ab-header"><span class="ab-icon">${dr.icon||'🎵'}</span><div><div class="ab-title">🎵 ${dr.title}</div><div class="ab-desc">今日儿歌 · 跟着唱给宝宝听</div></div></div>
           <div class="ab-controls"><button class="ab-play" onclick="playRhyme()" id="rp-btn">▶</button><button class="btn btn-ghost btn-xs" onclick="stopRhyme()">⏹ 停止</button><button class="speak-btn btn-xs" onclick="speakRhymeCN()" style="margin-left:auto">🔊 朗读</button></div></div>
           <div class="lyrics-box">${dr.lyrics.map(l=>`<div class="lyric-line"><span class="l-cn">${l[0]}</span><span class="l-en">${l[1]}</span></div>`).join('')}</div></div>`:''}
