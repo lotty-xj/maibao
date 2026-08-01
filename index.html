@@ -532,6 +532,7 @@ body{
       <button class="mobile-btn" onclick="toggleSidebar()">☰</button>
       <h1 class="page-title" id="page-title">首页</h1>
       <span class="current-date" id="current-date"></span>
+      <span style="font-size:12px;color:var(--pink);font-weight:700;background:var(--pink-light);padding:4px 10px;border-radius:20px;margin-left:6px" id="header-age"></span>
       <div class="family-switch">
         <span style="font-size:12px;color:var(--text-light)">当前：</span>
         <select id="current-member" onchange="switchMember()"></select>
@@ -1548,11 +1549,13 @@ function switchFam(n){DATA.baby.currentMember=n;saveLocal();updateSel();toast('�
 function switchMember(){const s=document.getElementById('current-member');if(s){DATA.baby.currentMember=s.value;saveLocal();toast('已切换');}}
 function updateSel(){const s=document.getElementById('current-member');if(!s)return;const ms=DATA.members||[];s.innerHTML=ms.map(m=>`<option value="${m.name}" ${m.name===DATA.baby.currentMember?'selected':''}>${m.emoji||'👤'} ${m.name}(${m.role})</option>`).join('');if(ms.length===0)s.innerHTML='<option value="">请先添加成员</option>';}
 function updateBabyDisp(){const el=document.getElementById('sidebar-baby-info');if(el){if(DATA.baby.birthDate)el.textContent=`${DATA.baby.name||'麦宝'} · ${getAgeText(DATA.baby.birthDate)} ${DATA.baby.gender==='boy'?'👦':'👧'}`;else el.textContent='请设置宝宝信息';}}
+function updateHeaderAge(){const el=document.getElementById('header-age');if(el&&DATA.baby.birthDate){const a=getAgeText(DATA.baby.birthDate);el.textContent='🐣 '+a;el.style.display='inline-block';}else if(el){el.style.display='none';}}
 
 // ===================== INIT =====================
 async function init() {
   refreshLocalData();
   document.getElementById('current-date').textContent = today();
+  updateHeaderAge();
 
   // Test server connection
   const online = await testConnection();
@@ -1590,7 +1593,7 @@ async function init() {
 document.addEventListener('DOMContentLoaded', init);
 
 // Periodic refresh
-setInterval(()=>{refreshLocalData();document.getElementById('current-date').textContent=today();},30000);
+setInterval(()=>{refreshLocalData();document.getElementById('current-date').textContent=today();updateHeaderAge();},30000);
 </script>
 <!-- PWA Install Prompt -->
 <div id="install-banner" style="display:none;position:fixed;bottom:16px;left:16px;right:16px;background:#fff;border-radius:var(--radius);box-shadow:0 8px 32px rgba(0,0,0,0.15);padding:16px;z-index:90;display:flex;align-items:center;gap:12px">
