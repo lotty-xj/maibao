@@ -414,6 +414,8 @@ body{
 }
 .form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--pink)}
 .form-input[type="date"],.form-input[type="datetime-local"]{padding:10px 14px;min-height:42px}
+.form-input-lg{padding:14px 16px!important;font-size:18px!important;min-height:50px!important}
+.form-select-lg{padding:12px 14px!important;font-size:16px!important;min-height:48px!important}
 .form-textarea{resize:vertical;min-height:60px}
 .form-hint{font-size:11px;color:var(--text-muted);margin-top:4px}
 
@@ -1275,43 +1277,53 @@ function renderFeedHistory(type) {
     ${rs.map(r=>`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12px"><span>${r.amount||r.food||'-'}</span><span style="color:var(--text-light)">${r.recordedBy||''}</span></div>`).join('')}</div>`).join('');
 }
 
+// Helper: family member selector dropdown
+function memberSelect(id, current) {
+  const ms = DATA.members||[];
+  const cur = current || DATA.baby.currentMember || (ms.length>0?ms[0].name:'');
+  if(ms.length===0) return `<input class="form-input" id="${id}" value="${cur}" placeholder="记录者">`;
+  return `<select class="form-select form-select-lg" id="${id}">
+    ${ms.map(m=>`<option value="${m.name}" ${m.name===cur?'selected':''}>${m.emoji||'👤'} ${m.name}(${m.role})</option>`).join('')}
+  </select>`;
+}
+
 function addMilk() {
-  const m = DATA.baby.currentMember||'家长';
   showModal('记录喂养',`<div class="form-group"><label class="form-label">类型</label><select class="form-select" id="mt"><option value="breastmilk">🤱 母乳</option><option value="formula">🍼 配方奶</option></select></div>
-    <div class="form-group"><label class="form-label">奶量(ml)</label><input class="form-input" type="number" id="ma" value="120" step="10"></div>
-    <div class="form-group"><label class="form-label">时间</label><input class="form-input" type="datetime-local" id="mdt" value="${nowDT()}"></div>
-    <div class="form-group"><label class="form-label">记录者</label><input class="form-input" id="mr" value="${m}"></div>
+    <div class="form-group"><label class="form-label">奶量(ml)</label><input class="form-input form-input-lg" type="number" id="ma" value="120" step="10" inputmode="numeric"></div>
+    <div class="form-group"><label class="form-label">时间</label><input class="form-input form-input-lg" type="datetime-local" id="mdt" value="${nowDT()}"></div>
+    <div class="form-group"><label class="form-label">记录者</label>${memberSelect('mr')}</div>
     <div class="form-group"><label class="form-label">备注</label><input class="form-input" id="mn" placeholder="选填"></div>`,
     `<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-primary btn-sm" onclick="saveMilk()">保存</button>`);
 }
 function saveMilk() {
-  DATA.feedingRecords.push({id:'feed_'+Date.now(),type:document.getElementById('mt').value,amount:document.getElementById('ma').value+'ml',date:document.getElementById('mdt').value.replace('T',' ')+':00',recordedBy:document.getElementById('mr').value||'家长',notes:document.getElementById('mn').value});
-  saveLocal();closeModal();toast('已保存');renderFeedingSub('milk');
+  const r=document.getElementById('mr');const rec=document.getElementById('mt').value==='breastmilk'?'🤱母乳':'🍼配方';
+  DATA.feedingRecords.push({id:'feed_'+Date.now(),type:document.getElementById('mt').value,amount:document.getElementById('ma').value+'ml',date:document.getElementById('mdt').value.replace('T',' ')+':00',recordedBy:r.tagName==='SELECT'?r.value:r.value||'家长',notes:document.getElementById('mn').value});
+  saveLocal();closeModal();toast(rec+' 已保存');renderFeedingSub('milk');
 }
 function addSolids() {
-  const m = DATA.baby.currentMember||'家长';
-  showModal('记录辅食',`<div class="form-group"><label class="form-label">食物</label><input class="form-input" id="sf" placeholder="如：高铁米粉"></div>
-    <div class="form-group"><label class="form-label">分量</label><input class="form-input" id="sa" placeholder="如：2勺"></div>
-    <div class="form-group"><label class="form-label">时间</label><input class="form-input" type="datetime-local" id="sdt" value="${nowDT()}"></div>
-    <div class="form-group"><label class="form-label">记录者</label><input class="form-input" id="sr" value="${m}"></div>`,
+  showModal('记录辅食',`<div class="form-group"><label class="form-label">食物</label><input class="form-input form-input-lg" id="sf" placeholder="如：高铁米粉"></div>
+    <div class="form-group"><label class="form-label">分量</label><input class="form-input form-input-lg" id="sa" placeholder="如：2勺"></div>
+    <div class="form-group"><label class="form-label">时间</label><input class="form-input form-input-lg" type="datetime-local" id="sdt" value="${nowDT()}"></div>
+    <div class="form-group"><label class="form-label">记录者</label>${memberSelect('sr')}</div>`,
     `<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-orange btn-sm" onclick="saveSolids()">保存</button>`);
 }
 function saveSolids() {
-  DATA.feedingRecords.push({id:'feed_'+Date.now(),type:'solids',food:document.getElementById('sf').value,amount:document.getElementById('sa').value,date:document.getElementById('sdt').value.replace('T',' ')+':00',recordedBy:document.getElementById('sr').value||'家长'});
+  const r=document.getElementById('sr');
+  DATA.feedingRecords.push({id:'feed_'+Date.now(),type:'solids',food:document.getElementById('sf').value,amount:document.getElementById('sa').value,date:document.getElementById('sdt').value.replace('T',' ')+':00',recordedBy:r.tagName==='SELECT'?r.value:r.value||'家长'});
   saveLocal();closeModal();toast('已保存');renderFeedingSub('solids');
 }
 function addPoop() {
-  const m = DATA.baby.currentMember||'家长';
   showModal('记录臭臭',`<div class="form-group"><label class="form-label">性状</label><select class="form-select" id="pq"><option value="正常">✅ 正常</option><option value="偏稀">💧 偏稀</option><option value="水样">🌊 水样</option><option value="偏干">🪨 偏干</option></select></div>
     <div class="form-group"><label class="form-label">颜色</label><select class="form-select" id="pc"><option value="黄色">🟡 黄色</option><option value="金黄色">🟠 金黄色</option><option value="绿色">🟢 绿色</option><option value="棕色">🟤 棕色</option></select></div>
     <div class="form-group"><label class="form-label">质地</label><input class="form-input" id="pt" placeholder="如：糊状"></div>
-    <div class="form-group"><label class="form-label">时间</label><input class="form-input" type="datetime-local" id="pdt" value="${nowDT()}"></div>
-    <div class="form-group"><label class="form-label">记录者</label><input class="form-input" id="pr" value="${m}"></div>`,
+    <div class="form-group"><label class="form-label">时间</label><input class="form-input form-input-lg" type="datetime-local" id="pdt" value="${nowDT()}"></div>
+    <div class="form-group"><label class="form-label">记录者</label>${memberSelect('pr')}</div>`,
     `<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-orange btn-sm" onclick="savePoop()">保存</button>`);
 }
 function savePoop() {
+  const r=document.getElementById('pr');
   if(!DATA.poopRecords) DATA.poopRecords=[];
-  DATA.poopRecords.push({id:'poop_'+Date.now(),quality:document.getElementById('pq').value,color:document.getElementById('pc').value,texture:document.getElementById('pt').value,date:document.getElementById('pdt').value.replace('T',' ')+':00',recordedBy:document.getElementById('pr').value||'家长'});
+  DATA.poopRecords.push({id:'poop_'+Date.now(),quality:document.getElementById('pq').value,color:document.getElementById('pc').value,texture:document.getElementById('pt').value,date:document.getElementById('pdt').value.replace('T',' ')+':00',recordedBy:r.tagName==='SELECT'?r.value:r.value||'家长'});
   saveLocal();closeModal();toast('已保存');renderFeedingSub('poop');
 }
 function addSuppForm() {
@@ -1416,7 +1428,14 @@ function showWeightHistory() {
 
 function uploadGrowthPhoto() { document.getElementById('growth-photo-input').click(); }
 // handleGrowthPhoto is now the compressed version below
-function viewPhoto(data) {
+function saveGrowthPhoto() {
+  if(!window._tempPhoto) return;
+  const note = document.getElementById('photo-note')?.value||'';
+  if(!DATA.growthPhotos) DATA.growthPhotos=[];
+  DATA.growthPhotos.push({date:today(),data:window._tempPhoto,note});
+  window._tempPhoto = null;
+  saveLocal(true);closeModal();toast('✅ 照片已保存');renderPage('growth');
+}
   showModal('📸 成长照片',`<img src="${data}" style="width:100%;border-radius:8px">`);
 }
 
@@ -1703,10 +1722,19 @@ function handleBabyPhoto(event) {
 
 function handleGrowthPhoto(event) {
   const file = event.target.files[0]; if (!file) return;
-  compressImage(file, 600, (compressed) => {
-    if(!DATA.growthPhotos) DATA.growthPhotos=[];
-    DATA.growthPhotos.push({date:today(),data:compressed});
-    saveLocal(true); toast('✅ 照片已保存'); renderPage('growth');
+  compressImage(file, 800, (compressed) => {
+    // Preview step: show photo with confirm/cancel
+    showModal('📸 预览照片',
+      `<div style="text-align:center">
+        <img src="${compressed}" style="width:100%;max-height:60vh;border-radius:8px;object-fit:contain">
+        <div style="margin-top:10px;font-size:12px;color:var(--text-light)">${today()}</div>
+        <div style="margin-top:6px"><input class="form-input" id="photo-note" placeholder="写一句话记录这一刻（选填）"></div>
+      </div>`,
+      `<button class="btn btn-outline btn-sm" onclick="closeModal()">重拍</button>
+       <button class="btn btn-primary btn-sm" onclick="saveGrowthPhoto()">💾 保存</button>`
+    );
+    // Store compressed image temporarily
+    window._tempPhoto = compressed;
   });
 }
 function saveBabyInfo(){
