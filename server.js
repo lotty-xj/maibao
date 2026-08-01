@@ -430,6 +430,18 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`  数据文件:  ${DATA_FILE}`);
   console.log('  支持多人协作，数据实时同步');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  
+  // Auto-backup: save data to local backup every 5 minutes
+  setInterval(() => {
+    try {
+      if(fs.existsSync(DATA_FILE)){
+        const size = fs.statSync(DATA_FILE).size;
+        if(size > 500){
+          fs.writeFileSync(DATA_FILE+'.auto-backup', fs.readFileSync(DATA_FILE));
+        }
+      }
+    } catch(e) {}
+  }, 300000);
   console.log('');
   
   // Print local IP
