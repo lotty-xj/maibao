@@ -1220,6 +1220,7 @@ function renderFeedingContent(sub) {
 
 function renderMilkTab() {
   const t = currentFeedingDate;
+  const todayRecs = DATA.feedingRecords.filter(r=>(r.type==='breastmilk'||r.type==='formula')&&r.date.startsWith(t));
   const isToday = t === today();
   const total = todayRecs.reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
   const last7 = [];
