@@ -132,11 +132,20 @@ app.post('/api/sync', (req, res) => {
   if(clientData.baby) data.baby = { ...data.baby, ...clientData.baby };
   if(clientData.settings) data.settings = { ...data.settings, ...clientData.settings };
   if(clientData.suppSettings) data.suppSettings = { ...(data.suppSettings||{}), ...clientData.suppSettings };
-  // Preserve members from both sides (merge by name)
+  // Preserve members from both sides (merge by name, keep photos)
   if(clientData.members && clientData.members.length > 0) {
     if(!data.members) data.members=[];
-    const existingNames = new Set(data.members.map(m=>m.name));
-    clientData.members.forEach(m=>{ if(!existingNames.has(m.name)) data.members.push(m); });
+    // If server has no members but client does, restore all of them
+    if(data.members.length === 0){
+      data.members = clientData.members;
+    } else {
+      const existingNames = new Set(data.members.map(m=>m.name));
+      clientData.members.forEach(m=>{
+        const idx = data.members.findIndex(sm=>sm.name===m.name);
+        if(idx>=0){ data.members[idx] = {...data.members[idx],...m}; }
+        else { data.members.push(m); }
+      });
+    }
   }
   
   writeData(data, true);
