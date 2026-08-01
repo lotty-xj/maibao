@@ -1557,7 +1557,7 @@ function saveGrowthPhoto() {
   const note = document.getElementById('photo-note')?.value||'';
   const photoDate = window._growthPhotoDate || today();
   if(!DATA.growthPhotos) DATA.growthPhotos=[];
-  DATA.growthPhotos.push({date:photoDate,data:window._tempPhoto,note});
+  DATA.growthPhotos.push({id:'photo_'+Date.now()+'_'+Math.random().toString(36).substr(2,5), date:photoDate, data:window._tempPhoto, note});
   window._tempPhoto = null;
   saveLocal(true);closeModal();toast('✅ 照片已保存 ('+photoDate+')');renderPage('growth');
 }
