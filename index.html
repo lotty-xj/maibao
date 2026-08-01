@@ -949,6 +949,25 @@ function getAgeMonths(birthDate) {
   return (n.getFullYear()-b.getFullYear())*12+(n.getMonth()-b.getMonth());
 }
 function getMonthLabel(m) { return m<12?m+'个月':Math.floor(m/12)+'岁'+(m%12>0?m%12+'个月':''); }
+function getAgeDetail(birthDate) {
+  if(!birthDate) return {months:0,days:0};
+  const b=new Date(birthDate);const n=new Date();
+  // Calculate exact age
+  let years=n.getFullYear()-b.getFullYear();
+  let months=n.getMonth()-b.getMonth();
+  let days=n.getDate()-b.getDate();
+  if(days<0){months--;const prevMonth=new Date(n.getFullYear(),n.getMonth(),0);days+=prevMonth.getDate();}
+  if(months<0){years--;months+=12;}
+  const totalMonths=years*12+months;
+  return {months:totalMonths,days};
+}
+function getAgeText(birthDate) {
+  const {months,days}=getAgeDetail(birthDate);
+  if(months<1) return days+'天';
+  if(months<12) return months+'个月'+days+'天';
+  const y=Math.floor(months/12),m=months%12;
+  return m>0?y+'岁'+m+'个月':y+'岁';
+}
 function getDailySeed(str) { let h=0;const s=str+today();for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}return Math.abs(h); }
 function seededPick(arr,seed) { return arr[Math.floor((Math.sin(seed)*10000-Math.floor(Math.sin(seed)*10000))*arr.length)]; }
 function toast(msg,type='success') {
@@ -1528,7 +1547,7 @@ function delMember(n){showConfirm('删除',`确认删除"${n}"？`,()=>{DATA.mem
 function switchFam(n){DATA.baby.currentMember=n;saveLocal();updateSel();toast('已切换为 '+n);renderPage('family');}
 function switchMember(){const s=document.getElementById('current-member');if(s){DATA.baby.currentMember=s.value;saveLocal();toast('已切换');}}
 function updateSel(){const s=document.getElementById('current-member');if(!s)return;const ms=DATA.members||[];s.innerHTML=ms.map(m=>`<option value="${m.name}" ${m.name===DATA.baby.currentMember?'selected':''}>${m.emoji||'👤'} ${m.name}(${m.role})</option>`).join('');if(ms.length===0)s.innerHTML='<option value="">请先添加成员</option>';}
-function updateBabyDisp(){const a=getAgeMonths(DATA.baby.birthDate),el=document.getElementById('sidebar-baby-info');if(el){if(DATA.baby.birthDate)el.textContent=`${DATA.baby.name||'麦宝'} · ${getMonthLabel(a)}`;else el.textContent='请设置宝宝信息';}}
+function updateBabyDisp(){const el=document.getElementById('sidebar-baby-info');if(el){if(DATA.baby.birthDate)el.textContent=`${DATA.baby.name||'麦宝'} · ${getAgeText(DATA.baby.birthDate)} ${DATA.baby.gender==='boy'?'👦':'👧'}`;else el.textContent='请设置宝宝信息';}}
 
 // ===================== INIT =====================
 async function init() {
