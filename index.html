@@ -1516,7 +1516,88 @@ function delGrowthPhoto(idx) {
   });
 }
 function viewPhoto(data) {
-  showModal('📸 成长照片',`<img src="${data}" style="width:100%;border-radius:8px">`);
+  const photos = DATA.growthPhotos||[];
+  const idx = photos.findIndex(p=>p.data===data);
+  if(idx<0) return;
+
+  // Build fullscreen viewer
+  let touchStartX = 0, touchEndX = 0;
+  let currentIdx = idx;
+
+  function renderViewer() {
+    const p = photos[currentIdx];
+    return `
+      <div id="photo-viewer" style="position:fixed;inset:0;background:#000;z-index:200;display:flex;flex-direction:column" ontouchstart="window._pvStartX=event.touches[0].clientX" ontouchend="window._pvEndX=event.changedTouches[0].clientX;navigatePhoto()">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;color:#fff;font-size:13px;background:rgba(0,0,0,0.5)">
+          <span>📸 ${p.date} ${p.date.includes(' ')?p.date.split(' ')[1].substring(0,5):''}</span>
+          <span style="color:#aaa">${currentIdx+1}/${photos.length}</span>
+          <button onclick="closePhotoViewer()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer">✕</button>
+        </div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden" 
+          ontouchstart="let t=event.touches[0];window._pvStartX=t.clientX;window._pvStartY=t.clientY"
+          ontouchend="let t=event.changedTouches[0];if(Math.abs(t.clientX-window._pvStartX)>50&&Math.abs(t.clientY-window._pvStartY)<Math.abs(t.clientX-window._pvStartX)){navigatePhoto(t.clientX<window._pvStartX?1:-1)}">
+          <img src="${p.data}" style="max-width:100%;max-height:100%;object-fit:contain">
+        </div>
+        <div style="display:flex;justify-content:center;gap:20px;padding:12px;background:rgba(0,0,0,0.5)">
+          <button class="btn btn-ghost btn-sm" style="color:#fff;font-size:20px" onclick="navigatePhoto(-1)">◀</button>
+          <button class="btn btn-ghost btn-sm" style="color:#fff;font-size:20px" onclick="navigatePhoto(1)">▶</button>
+          <button class="btn btn-ghost btn-sm" style="color:#FF7675" onclick="confirmDeletePhoto()">🗑</button>
+        </div>
+      </div>`;
+  }
+
+  window._photoViewerIdx = idx;
+  window._photoViewerPhotos = photos;
+  window.navigatePhoto = function(dir) {
+    const photos = window._photoViewerPhotos;
+    let idx = window._photoViewerIdx + (dir||0);
+    // Auto-detect swipe direction
+    if(dir===undefined){
+      const diff = (window._pvEndX||0) - (window._pvStartX||0);
+      if(Math.abs(diff)>50) idx = window._photoViewerIdx + (diff<0?1:-1);
+    }
+    if(idx<0||idx>=photos.length) return;
+    window._photoViewerIdx = idx;
+    const viewer = document.getElementById('photo-viewer');
+    if(viewer) {
+      const p = photos[idx];
+      viewer.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;color:#fff;font-size:13px;background:rgba(0,0,0,0.5)">
+          <span>📸 ${p.date} ${p.date.includes(' ')?p.date.split(' ')[1].substring(0,5):''}</span>
+          <span style="color:#aaa">${idx+1}/${photos.length}</span>
+          <button onclick="closePhotoViewer()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer">✕</button>
+        </div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center" 
+          ontouchstart="let t=event.touches[0];window._pvStartX=t.clientX;window._pvStartY=t.clientY"
+          ontouchend="let t=event.changedTouches[0];if(Math.abs(t.clientX-window._pvStartX)>50&&Math.abs(t.clientY-window._pvStartY)<Math.abs(t.clientX-window._pvStartX)){navigatePhoto(t.clientX<window._pvStartX?1:-1)}">
+          <img src="${p.data}" style="max-width:100%;max-height:100%;object-fit:contain">
+        </div>
+        <div style="display:flex;justify-content:center;gap:20px;padding:12px;background:rgba(0,0,0,0.5)">
+          <button class="btn btn-ghost btn-sm" style="color:#fff;font-size:20px" onclick="navigatePhoto(-1)">◀</button>
+          <button class="btn btn-ghost btn-sm" style="color:#fff;font-size:20px" onclick="navigatePhoto(1)">▶</button>
+          <button class="btn btn-ghost btn-sm" style="color:#FF7675" onclick="confirmDeletePhoto()">🗑</button>
+        </div>`;
+    }
+  };
+  window.closePhotoViewer = function() {
+    const v = document.getElementById('photo-viewer'); if(v) v.remove();
+    window._photoViewerIdx = null;
+    window._photoViewerPhotos = null;
+  };
+  window.confirmDeletePhoto = function() {
+    const idx = window._photoViewerIdx;
+    if(idx===null || idx===undefined) return;
+    showConfirm('删除照片','确认删除这张照片？',()=>{
+      if(DATA.growthPhotos) DATA.growthPhotos.splice(idx,1);
+      saveLocal(true);toast('已删除');
+      window.closePhotoViewer();
+      renderPage('growth');
+    });
+  };
+
+  const div = document.createElement('div');
+  div.innerHTML = renderViewer();
+  document.body.appendChild(div.firstElementChild);
 }
 
 function renderGrowthChart(recs,wData,hData,ageMonths) {
