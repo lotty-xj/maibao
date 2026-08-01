@@ -107,6 +107,24 @@ body{
 .hdr-avatar:hover{transform:scale(1.1)}
 .hdr-avatar.active{border-color:var(--pink);box-shadow:0 0 0 2px var(--pink-light);transform:scale(1.15)}
 .hdr-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.member-popup{
+  position:absolute;top:48px;right:0;background:#fff;
+  border-radius:var(--radius-sm);box-shadow:0 8px 32px rgba(0,0,0,0.15);
+  padding:8px;z-index:30;min-width:160px;display:none;
+}
+.member-popup.show{display:block}
+.member-popup .mp-item{
+  display:flex;align-items:center;gap:10px;padding:8px 12px;
+  border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;
+  transition:background 0.15s;
+}
+.member-popup .mp-item:hover{background:var(--pink-light)}
+.member-popup .mp-item.active{background:var(--pink-light);color:var(--pink-dark)}
+.member-popup .mp-avatar{
+  width:32px;height:32px;border-radius:50%;display:flex;
+  align-items:center;justify-content:center;font-size:16px;color:#fff;flex-shrink:0;
+}
+.member-popup .mp-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 .main-header .current-date{
   font-size:12px;color:var(--text-light);background:var(--yellow-light);
   padding:4px 12px;border-radius:20px;font-weight:600;
@@ -554,7 +572,10 @@ body{
       <h1 class="page-title" id="page-title">首页</h1>
       <span class="current-date" id="current-date"></span>
       <span style="font-size:12px;color:var(--pink);font-weight:700;background:var(--pink-light);padding:4px 10px;border-radius:20px;margin-left:6px" id="header-age"></span>
-      <div class="family-switch" id="family-avatars"></div>
+      <div class="family-switch" id="family-avatars" onclick="toggleMemberPop()" style="position:relative">
+        <div id="current-avatar" style="cursor:pointer"></div>
+        <div class="member-popup" id="member-popup" style="display:none"></div>
+      </div>
     </header>
     <div class="main-content" id="main-content"></div>
   </main>
@@ -1704,18 +1725,40 @@ function saveMember(){const n=document.getElementById('mn2').value;if(!n){toast(
 function delMember(n){showConfirm('删除',`确认删除"${n}"？`,()=>{DATA.members=DATA.members.filter(m=>m.name!==n);if(DATA.baby.currentMember===n)DATA.baby.currentMember=DATA.members[0]?.name||'';saveLocal();updateSel();toast('已删除');renderPage('family');});}
 function switchFam(n){DATA.baby.currentMember=n;saveLocal();updateSel();toast('已切换为 '+n);renderPage('family');}
 function updateSel(){
-  const el=document.getElementById('family-avatars');
-  if(!el)return;
   const ms=DATA.members||[],cm=DATA.baby.currentMember||'';
   const colors=['#FF6B8A','#5B9BD5','#3ECF8E','#FF8C42','#9B7ED8','#FF6F61','#26C6B7'];
-  el.innerHTML=ms.map((m,i)=>{
+  const current=ms.find(m=>m.name===cm)||ms[0];
+  // Current avatar
+  const av=document.getElementById('current-avatar');
+  if(av && current){
+    const idx=ms.indexOf(current),bg=colors[idx%colors.length];
+    av.innerHTML=`<div class="hdr-avatar active" style="background:${bg};width:38px;height:38px;font-size:20px">${current.photo?`<img src="${current.photo}">`:current.emoji||'👤'}</div>`;
+  }else if(av){av.innerHTML='<span style="font-size:12px;color:var(--text-muted)">+家人</span>';}
+  // Popup
+  const pop=document.getElementById('member-popup');
+  if(pop) pop.innerHTML=ms.map((m,i)=>{
     const bg=colors[i%colors.length],active=m.name===cm;
-    return `<div title="${m.name}(${m.role})" onclick="switchFam('${m.name}')" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px">
-      <div class="hdr-avatar ${active?'active':''}" style="background:${bg}">${m.photo?`<img src="${m.photo}">`:m.emoji||'👤'}</div>
+    return `<div class="mp-item ${active?'active':''}" onclick="switchFam('${m.name}');closeMemberPop()">
+      <div class="mp-avatar" style="background:${bg}">${m.photo?`<img src="${m.photo}">`:m.emoji||'👤'}</div>
+      <div><div>${m.name}</div><div style="font-size:10px;color:var(--text-light)">${m.role}</div></div>
+      ${active?'<span style="margin-left:auto;font-size:14px">✅</span>':''}
     </div>`;
   }).join('');
-  if(ms.length===0) el.innerHTML='<span style="font-size:12px;color:var(--text-muted)">请先添加家人</span>';
 }
+
+function toggleMemberPop(){
+  const pop=document.getElementById('member-popup');
+  pop.classList.toggle('show');
+}
+function closeMemberPop(){
+  document.getElementById('member-popup').classList.remove('show');
+}
+// Close popup when clicking outside
+document.addEventListener('click',(e)=>{
+  if(!e.target.closest('#family-avatars')){
+    document.getElementById('member-popup')?.classList.remove('show');
+  }
+});
 function updateBabyDisp(){const el=document.getElementById('sidebar-baby-info');if(el){if(DATA.baby.birthDate)el.textContent=`${DATA.baby.name||'麦宝'} · ${getAgeText(DATA.baby.birthDate)} ${DATA.baby.gender==='boy'?'👦':'👧'}`;else el.textContent='请设置宝宝信息';}}
 function updateHeaderAge(){const el=document.getElementById('header-age');if(el&&DATA.baby.birthDate){const a=getAgeText(DATA.baby.birthDate);el.textContent='🐣 '+a;el.style.display='inline-block';}else if(el){el.style.display='none';}}
 
