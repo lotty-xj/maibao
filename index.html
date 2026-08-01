@@ -1400,6 +1400,14 @@ function renderGrowth() {
   const ww = wData[cm],wh = hData[cm];
   if(!DATA.healthChecks) DATA.healthChecks = CHILD_HEALTH_SCHEDULE.map(h=>({...h,id:'hc_'+Date.now()+Math.random(),completed:false}));
   if(!DATA.growthPhotos) DATA.growthPhotos=[];
+  if(!window._growthPhotoDate) window._growthPhotoDate = today();
+
+  // Photos for selected date
+  const photoDate = window._growthPhotoDate;
+  const isToday = photoDate === today();
+  const d=new Date(photoDate);
+  const dateLabel = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+  const dayPhotos = DATA.growthPhotos.filter(p=>p.date===photoDate);
 
   // Weight history for modal
   const wHistory = recs.filter(r=>r.weight).sort((a,b)=>b.date.localeCompare(a.date));
@@ -1408,20 +1416,32 @@ function renderGrowth() {
     <!-- Daily Photo -->
     <div class="card card-pink" style="margin-bottom:16px">
       <div class="card-header"><div class="card-title"><span class="icon">📸</span>每日成长照片</div></div>
-      <div style="display:flex;gap:10px;overflow-x:auto;padding:8px 0">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px;background:#fff;border-radius:12px;padding:5px 12px;box-shadow:var(--shadow);cursor:pointer" onclick="openGrowthDatePicker()">
+          <span style="font-size:16px">📅</span>
+          <span style="font-size:13px;font-weight:700;color:var(--pink-dark)">${isToday?'今天':dateLabel}</span>
+          <span style="font-size:10px;color:var(--text-muted)">▼</span>
+        </div>
+        <input type="date" class="form-input" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0" value="${photoDate}" onchange="changeGrowthPhotoDate(this.value)" id="growth-date-picker">
+        <button class="btn btn-ghost btn-xs" onclick="changeGrowthPhotoDate(prevDay('${photoDate}'))">◀</button>
+        <button class="btn btn-ghost btn-xs" onclick="changeGrowthPhotoDate(nextDay('${photoDate}'))">▶</button>
+        ${!isToday?`<button class="btn btn-primary btn-xs" onclick="changeGrowthPhotoDate('${today()}')">📍 今天</button>`:''}
+        <span style="font-size:11px;color:var(--text-muted);margin-left:auto">${dayPhotos.length}张照片</span>
+      </div>
+      <div style="display:flex;gap:10px;overflow-x:auto;padding:8px 0;-webkit-overflow-scrolling:touch;scroll-behavior:smooth" id="growth-photo-row">
         <div class="photo-avatar lg" style="width:80px;height:80px;flex-shrink:0;background:var(--pink-light);font-size:14px;color:var(--pink)" onclick="uploadGrowthPhoto()">
           ＋<br>拍照
         </div>
-        ${DATA.growthPhotos.slice(-10).reverse().map((p,i)=>{
-          const idx = DATA.growthPhotos.length - 1 - i; // actual index in array
+        ${dayPhotos.map((p,i)=>{
+          const idx = DATA.growthPhotos.indexOf(p);
           return `
           <div style="flex-shrink:0;text-align:center;position:relative">
             <div style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#FF7675;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;z-index:2;box-shadow:0 2px 6px rgba(0,0,0,0.2)" onclick="event.stopPropagation();delGrowthPhoto(${idx})">✕</div>
             <img src="${p.data}" style="width:80px;height:80px;border-radius:12px;object-fit:cover;border:2px solid var(--pink-light);cursor:pointer" onclick="viewPhoto('${p.data}')">
-            <div style="font-size:10px;color:var(--text-light);margin-top:2px">${p.date}</div>
+            ${p.note?`<div style="font-size:9px;color:var(--text-light);margin-top:2px;max-width:80px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${p.note}</div>`:`<div style="font-size:10px;color:var(--text-light);margin-top:2px">${p.date}</div>`}
           </div>
         `}).join('')}
-        ${DATA.growthPhotos.length===0?'<div style="font-size:13px;color:var(--text-muted);padding:20px">点击＋拍照，记录宝宝每天的样子 📸</div>':''}
+        ${dayPhotos.length===0?`<div style="font-size:13px;color:var(--text-muted);padding:20px;flex-shrink:0">${isToday?'点击＋拍照，记录宝宝今天的样子 📸':'这天还没有照片'}</div>`:''}
       </div>
       <input type="file" id="growth-photo-input" accept="image/*" capture="environment" style="display:none" onchange="handleGrowthPhoto(event)">
     </div>
@@ -1469,15 +1489,28 @@ function showWeightHistory() {
   showModal('⚖️ 体重历史记录',html);
 }
 
-function uploadGrowthPhoto() { document.getElementById('growth-photo-input').click(); }
+function uploadGrowthPhoto() { 
+  document.getElementById('growth-photo-input').click();
+  // Auto-set photo date to currently selected date
+  window._growthPhotoDate = window._growthPhotoDate || today();
+}
+function openGrowthDatePicker() {
+  const el = document.getElementById('growth-date-picker');
+  if (el.showPicker) el.showPicker(); else el.click();
+}
+function changeGrowthPhotoDate(date) {
+  window._growthPhotoDate = date;
+  renderPage('growth');
+}
 // handleGrowthPhoto is now the compressed version below
 function saveGrowthPhoto() {
   if(!window._tempPhoto) return;
   const note = document.getElementById('photo-note')?.value||'';
+  const photoDate = window._growthPhotoDate || today();
   if(!DATA.growthPhotos) DATA.growthPhotos=[];
-  DATA.growthPhotos.push({date:today(),data:window._tempPhoto,note});
+  DATA.growthPhotos.push({date:photoDate,data:window._tempPhoto,note});
   window._tempPhoto = null;
-  saveLocal(true);closeModal();toast('✅ 照片已保存');renderPage('growth');
+  saveLocal(true);closeModal();toast('✅ 照片已保存 ('+photoDate+')');renderPage('growth');
 }
 function delGrowthPhoto(idx) {
   showConfirm('删除照片','确认删除这张成长照片？',()=>{
