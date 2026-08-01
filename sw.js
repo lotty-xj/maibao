@@ -1,5 +1,5 @@
 // Service Worker for 麦宝的成长日记
-const CACHE_NAME = 'maibao-v4';
+const CACHE_NAME = 'maibao-v5';
 const ASSETS = [
   '/',
   '/index.html',
