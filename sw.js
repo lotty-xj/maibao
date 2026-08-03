@@ -1,5 +1,5 @@
 // Service Worker for 麦宝的成长日记
-const CACHE_NAME = 'maibao-v6';
+const CACHE_NAME = 'maibao-v9';
 // Force activate immediately
 self.addEventListener('install', (event) => {
   self.skipWaiting();
