@@ -177,6 +177,20 @@ function addActivity(data, type, detail, userName) {
   if (data._activityLog.length > 100) data._activityLog = data._activityLog.slice(0, 100);
 }
 
+// ========== Explicit static file serving (Railway fallback) ==========
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+app.get('/index.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+app.get('/manifest.json', (req, res) => {
+  res.sendFile(path.join(__dirname, 'manifest.json'));
+});
+app.get('/sw.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'sw.js'));
+});
+
 // ========== API Routes ==========
 
 // Get all data
