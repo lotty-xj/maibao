@@ -784,15 +784,11 @@ function trySyncWithBackoff() {
   });
 }
 
-// Test connection on init
+// Test connection on init (fast, non-blocking)
 async function testConnection() {
   try {
-    // Wake up the server first (Railway free tier hibernation)
-    const resp = await fetch(SYNC_URL + '/health-check', { signal: AbortSignal.timeout(60000) });
-    if (resp.ok) {
-      SYNC_ENABLED = true;
-      return true;
-    }
+    const resp = await fetch(SYNC_URL + '/health-check', { signal: AbortSignal.timeout(8000) });
+    if (resp.ok) { SYNC_ENABLED = true; return true; }
   } catch (e) {}
   SYNC_ENABLED = false;
   updateSyncUI(false);
@@ -2045,25 +2041,6 @@ async function init() {
   document.getElementById('current-date').textContent = today();
   updateHeaderAge();
 
-  // Test server connection
-  const online = await testConnection();
-  if (online) {
-    await syncPull(true); // initial data pull from server (silent)
-    setupSSE();
-  } else {
-    // Offline mode - still usable with localStorage
-    updateSyncUI(false);
-  }
-  // Fallback polling (safeguard against SSE failure)
-  startPolling();
-
-  document.querySelectorAll('.nav-item').forEach(item=>{
-    item.addEventListener('click',()=>navigateTo(item.dataset.page));
-  });
-
-  document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
-  document.getElementById('confirm-overlay').addEventListener('click',function(e){if(e.target===this)closeConfirm();});
-
   // Ensure data structures
   if(!DATA.feedingRecords) DATA.feedingRecords=[];
   if(!DATA.supplementRecords) DATA.supplementRecords=[];
@@ -2074,12 +2051,30 @@ async function init() {
   if(!DATA.educationRecords) DATA.educationRecords=[];
   saveLocal(true);
 
-  // Load per-device user preference (each phone remembers its own user)
+  // Load per-device user preference
   const myName = getMyName();
   if(myName) DATA.baby.currentMember = myName;
 
+  document.querySelectorAll('.nav-item').forEach(item=>{
+    item.addEventListener('click',()=>navigateTo(item.dataset.page));
+  });
+  document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+  document.getElementById('confirm-overlay').addEventListener('click',function(e){if(e.target===this)closeConfirm();});
+
   updateSel();updateBabyDisp();
-  navigateTo('home');
+  navigateTo('home'); // RENDER IMMEDIATELY, don't wait for network
+
+  // Sync in background - don't block rendering
+  setTimeout(async () => {
+    const online = await testConnection();
+    if (online) {
+      await syncPull(true);
+      setupSSE();
+    } else {
+      updateSyncUI(false);
+    }
+    startPolling();
+  }, 500);
 }
 
 document.addEventListener('DOMContentLoaded', init);
